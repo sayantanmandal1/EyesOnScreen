@@ -1,5 +1,6 @@
 /**
  * Application constants
+ * Converted from TypeScript to JavaScript
  */
 
 export const VISION_CONSTANTS = {
@@ -19,7 +20,7 @@ export const VISION_CONSTANTS = {
   MIN_FACE_CONFIDENCE: 0.5,
   MIN_GAZE_CONFIDENCE: 0.7,
   MIN_HEAD_POSE_CONFIDENCE: 0.6,
-} as const;
+};
 
 export const CALIBRATION_CONSTANTS = {
   // Calibration points
@@ -34,7 +35,7 @@ export const CALIBRATION_CONSTANTS = {
   // Head pose bounds (degrees)
   DEFAULT_YAW_RANGE: [-25, 25],
   DEFAULT_PITCH_RANGE: [-20, 20],
-} as const;
+};
 
 export const PROCTORING_CONSTANTS = {
   // Alert thresholds
@@ -53,7 +54,7 @@ export const PROCTORING_CONSTANTS = {
   EYES_OFF_PENALTY: 3,
   HARD_EVENT_PENALTY: 25,
   SCORE_DECAY_PER_SECOND: 1,
-} as const;
+};
 
 export const QUIZ_CONSTANTS = {
   // Quiz configuration
@@ -70,7 +71,7 @@ export const QUIZ_CONSTANTS = {
   // Accessibility
   FOCUS_OUTLINE_WIDTH: 2,
   MIN_CONTRAST_RATIO: 4.5,
-} as const;
+};
 
 export const PERFORMANCE_CONSTANTS = {
   // Performance targets
@@ -86,7 +87,7 @@ export const PERFORMANCE_CONSTANTS = {
   // Adaptive quality
   FPS_DROP_THRESHOLD: 5,
   QUALITY_ADJUSTMENT_STEPS: 3,
-} as const;
+};
 
 export const STORAGE_CONSTANTS = {
   // IndexedDB
@@ -101,7 +102,7 @@ export const STORAGE_CONSTANTS = {
   // Compression
   COMPRESSION_THRESHOLD_BYTES: 1024,
   BATCH_SIZE: 100,
-} as const;
+};
 
 export const UI_CONSTANTS = {
   // Animation durations
@@ -122,7 +123,7 @@ export const UI_CONSTANTS = {
     INFO: 'blue-500',
     PRIMARY: 'indigo-600',
   },
-} as const;
+};
 
 export const ERROR_MESSAGES = {
   CAMERA: {
@@ -141,4 +142,4 @@ export const ERROR_MESSAGES = {
     NETWORK_ERROR: 'Network error occurred. Your progress has been saved locally.',
     INTEGRITY_VIOLATION: 'Academic integrity violation detected. Please follow the quiz guidelines.',
   },
-} as const;
+};

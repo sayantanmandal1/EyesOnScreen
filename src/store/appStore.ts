@@ -99,7 +99,14 @@ export const useAppStore = create<AppStore>()(
         })),
         
         // UI actions
-        setCameraPermission: (cameraPermission) => set({ cameraPermission }),
+        setCameraPermission: (cameraPermission) => set((state) => ({
+          cameraPermission,
+          // Automatically set monitoring active when camera is granted
+          monitoring: {
+            ...state.monitoring,
+            isActive: cameraPermission === 'granted'
+          }
+        })),
         
         setQuizPhase: (quizPhase) => set({ quizPhase }),
         

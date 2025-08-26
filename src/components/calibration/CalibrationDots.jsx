@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStore } from '../../store/appStore';
 
 export const CalibrationDots = ({
   points,
@@ -10,6 +11,7 @@ export const CalibrationDots = ({
   isProcessing,
   cameraStream
 }) => {
+  const { monitoring, cameraPermission } = useAppStore();
   const [currentPointIndex, setCurrentPointIndex] = useState(0);
   const [isCollecting, setIsCollecting] = useState(false);
   const [collectedData, setCollectedData] = useState([]);
@@ -96,8 +98,10 @@ export const CalibrationDots = ({
     return Math.min(avgConfidence, 1.0);
   };
 
-  // Check camera status
-  if (!cameraStream || !cameraStream.active) {
+  // Check camera status - use monitoring state from store, camera permission, or cameraStream prop
+  const isCameraActive = cameraStream?.active || monitoring?.isActive || cameraPermission === 'granted';
+  
+  if (!isCameraActive) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -105,6 +109,14 @@ export const CalibrationDots = ({
           <p className="text-gray-300">
             Camera must be active for gaze calibration
           </p>
+          <div className="mt-4 text-sm text-gray-400">
+            <p>Please ensure:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Camera permission is granted</li>
+              <li>Camera is not being used by another application</li>
+              <li>Try refreshing the page if the issue persists</li>
+            </ul>
+          </div>
         </div>
       </div>
     );

@@ -3,12 +3,14 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStore } from '../../store/appStore';
 
 export const EnvironmentCheck = ({
   onComplete,
   isProcessing,
   cameraStream
 }) => {
+  const { monitoring, cameraPermission } = useAppStore();
   const [isCollecting, setIsCollecting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [collectedData, setCollectedData] = useState([]);
@@ -96,8 +98,9 @@ export const EnvironmentCheck = ({
   const completeEnvironmentCheck = useCallback(() => {
     setIsCollecting(false);
     
-    // Ensure camera is still active
-    if (!cameraStream || !cameraStream.active) {
+    // Check if camera is still active
+    const isCameraActive = cameraStream?.active || monitoring?.isActive || false;
+    if (!isCameraActive) {
       console.warn('Camera stream not active during environment check completion');
     }
     
@@ -107,9 +110,10 @@ export const EnvironmentCheck = ({
     onComplete({
       lighting: baseline?.mean || 0,
       stability: baseline?.shadowStability || 0,
-      quality: calculateEnvironmentQuality(baseline)
+      quality: calculateEnvironmentQuality(baseline),
+      setupScore: isCameraActive ? 0.9 : 0.5 // Higher score if camera is active
     });
-  }, [collectedData, onComplete, cameraStream]);
+  }, [collectedData, onComplete, cameraStream, monitoring]);
 
   const calculateEnvironmentBaseline = (data) => {
     if (data.length === 0) return null;
@@ -172,8 +176,10 @@ export const EnvironmentCheck = ({
     return Math.min(quality, 1.0);
   };
 
-  // Check camera status
-  if (!cameraStream || !cameraStream.active) {
+  // Check camera status - use monitoring state from store, camera permission, or cameraStream prop
+  const isCameraActive = cameraStream?.active || monitoring?.isActive || cameraPermission === 'granted';
+  
+  if (!isCameraActive) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -181,6 +187,14 @@ export const EnvironmentCheck = ({
           <p className="text-gray-300">
             Camera must be active for environment analysis
           </p>
+          <div className="mt-4 text-sm text-gray-400">
+            <p>Please ensure:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Camera permission is granted</li>
+              <li>Camera is not being used by another application</li>
+              <li>Try refreshing the page if the issue persists</li>
+            </ul>
+          </div>
         </div>
       </div>
     );
