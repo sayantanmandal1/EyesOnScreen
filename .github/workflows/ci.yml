@@ -114,7 +114,6 @@ jobs:
           name: performance-results
           path: benchmark-results.json
 
-          
   security-scan:
     runs-on: ubuntu-latest
 
@@ -127,8 +126,6 @@ jobs:
 
       - name: Run dependency check
         uses: snyk/actions/node@master
-        if: ${{ secrets.SNYK_TOKEN != '' }}
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
