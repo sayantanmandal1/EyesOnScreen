@@ -36,7 +36,7 @@ export const ConfidenceMeter: React.FC<ConfidenceMeterProps> = ({
     environment: 0
   });
 
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update confidence data
   useEffect(() => {

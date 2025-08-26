@@ -14,11 +14,17 @@ interface AlertManagerProps {
   onAlertDismissed?: (alertId: string) => void;
 }
 
-export const AlertManager: React.FC<AlertManagerProps> = ({
+export interface AlertManagerRef {
+  processFlag: (flag: FlagEvent) => void;
+  clearAllAlerts: () => void;
+  getActiveAlerts: () => AlertState[];
+}
+
+export const AlertManager = React.forwardRef<AlertManagerRef, AlertManagerProps>(({
   config,
   onAlertAcknowledged,
   onAlertDismissed,
-}) => {
+}, ref) => {
   const [alertEngine, setAlertEngine] = useState<AlertEngine | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<AlertState[]>([]);
   const [currentHardAlert, setCurrentHardAlert] = useState<AlertState | null>(null);
@@ -87,13 +93,13 @@ export const AlertManager: React.FC<AlertManagerProps> = ({
 
   // Expose processFlag method
   React.useImperativeHandle(
-    React.useRef(),
+    ref,
     () => ({
       processFlag,
-      clearAllAlerts: () => alertEngine?.clearAllAlerts(),
+      clearAllAlerts: () => alertEngine?.clearAllAlerts() || undefined,
       getActiveAlerts: () => alertEngine?.getActiveAlerts() || [],
     }),
-    [alertEngine]
+    [alertEngine, processFlag]
   );
 
   return (
@@ -116,7 +122,9 @@ export const AlertManager: React.FC<AlertManagerProps> = ({
       )}
     </>
   );
-};
+});
+
+AlertManager.displayName = 'AlertManager';
 
 // Hook for using AlertManager in components
 export const useAlertManager = () => {

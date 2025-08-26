@@ -152,8 +152,9 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
       )}
     </div>
   );
-};interfa
-ce CalibrationDotProps {
+};
+
+interface CalibrationDotProps {
   point: CalibrationPoint;
   isActive: boolean;
   isCompleted: boolean;

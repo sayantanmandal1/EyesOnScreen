@@ -162,7 +162,7 @@ export class IntegrityEnforcer {
    * Set up copy/paste blocking
    */
   private setupCopyPasteBlocking(): void {
-    const preventCopyPaste = (event: ClipboardEvent) => {
+    const preventCopyPaste = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
       
@@ -174,20 +174,21 @@ export class IntegrityEnforcer {
       }
     };
 
-    const preventKeyboardShortcuts = (event: KeyboardEvent) => {
+    const preventKeyboardShortcuts = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
       // Block common copy/paste shortcuts
-      if (event.ctrlKey || event.metaKey) {
+      if (keyboardEvent.ctrlKey || keyboardEvent.metaKey) {
         const blockedKeys = ['c', 'v', 'x', 'a', 's', 'z', 'y'];
-        if (blockedKeys.includes(event.key.toLowerCase())) {
+        if (blockedKeys.includes(keyboardEvent.key.toLowerCase())) {
           event.preventDefault();
           event.stopPropagation();
           
           if (!this.isInGracePeriod) {
             this.recordViolation('copy-paste', {
               action: 'keyboard-shortcut',
-              key: event.key,
-              ctrlKey: event.ctrlKey,
-              metaKey: event.metaKey
+              key: keyboardEvent.key,
+              ctrlKey: keyboardEvent.ctrlKey,
+              metaKey: keyboardEvent.metaKey
             });
           }
         }
@@ -204,15 +205,16 @@ export class IntegrityEnforcer {
    * Set up right-click blocking
    */
   private setupRightClickBlocking(): void {
-    const preventRightClick = (event: MouseEvent) => {
-      if (event.button === 2) { // Right click
+    const preventRightClick = (event: Event) => {
+      const mouseEvent = event as MouseEvent;
+      if (mouseEvent.button === 2) { // Right click
         event.preventDefault();
         event.stopPropagation();
         
         if (!this.isInGracePeriod) {
           this.recordViolation('right-click', {
-            x: event.clientX,
-            y: event.clientY,
+            x: mouseEvent.clientX,
+            y: mouseEvent.clientY,
             target: (event.target as Element)?.tagName || 'unknown'
           });
         }
@@ -232,14 +234,15 @@ export class IntegrityEnforcer {
    * Set up developer tools blocking
    */
   private setupDevToolsBlocking(): void {
-    const preventDevToolsShortcuts = (event: KeyboardEvent) => {
+    const preventDevToolsShortcuts = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
       // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, etc.
       const isDevToolsShortcut = 
-        event.key === 'F12' ||
-        (event.ctrlKey && event.shiftKey && ['I', 'J', 'C'].includes(event.key.toUpperCase())) ||
-        (event.ctrlKey && event.key.toLowerCase() === 'u') ||
-        (event.ctrlKey && event.shiftKey && event.key === 'Delete') ||
-        (event.key === 'F7'); // IE dev tools
+        keyboardEvent.key === 'F12' ||
+        (keyboardEvent.ctrlKey && keyboardEvent.shiftKey && ['I', 'J', 'C'].includes(keyboardEvent.key.toUpperCase())) ||
+        (keyboardEvent.ctrlKey && keyboardEvent.key.toLowerCase() === 'u') ||
+        (keyboardEvent.ctrlKey && keyboardEvent.shiftKey && keyboardEvent.key === 'Delete') ||
+        (keyboardEvent.key === 'F7'); // IE dev tools
 
       if (isDevToolsShortcut) {
         event.preventDefault();
@@ -247,10 +250,10 @@ export class IntegrityEnforcer {
         
         if (!this.isInGracePeriod) {
           this.recordViolation('dev-tools', {
-            key: event.key,
-            ctrlKey: event.ctrlKey,
-            shiftKey: event.shiftKey,
-            altKey: event.altKey
+            key: keyboardEvent.key,
+            ctrlKey: keyboardEvent.ctrlKey,
+            shiftKey: keyboardEvent.shiftKey,
+            altKey: keyboardEvent.altKey
           });
         }
       }
@@ -395,7 +398,7 @@ export class IntegrityEnforcer {
     // Generate flag if configured
     if (this.config.flagOnViolation && this.callbacks.onFlag) {
       const flag: FlagEvent = {
-        id: `integrity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `integrity_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         timestamp: violation.timestamp,
         type: this.mapViolationToFlagType(type),
         severity: this.getViolationSeverity(type),
