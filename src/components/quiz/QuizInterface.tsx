@@ -16,8 +16,11 @@ import { Question } from '../../lib/quiz/types';
 
 interface QuizInterfaceProps {
   questions: Question[];
+  currentQuestionIndex?: number;
+  onAnswerChange?: (questionId: string, answer: string) => void;
+  onNext?: () => void;
   onComplete: (results: any) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   className?: string;
 }
 

@@ -2,34 +2,16 @@
  * Export controls and download functionality
  */
 
-import React, { useState } from 'react';
-import { QuizSession } from '../../lib/quiz/types';
-import { FlagEvent } from '../../lib/proctoring/types';
+import { useState } from 'react';
 import { ExportManager } from '../../lib/data/ExportManager';
 
-interface ExportControlsProps {
-  session: QuizSession;
-  flags: FlagEvent[];
-  riskScore: number;
-  className?: string;
-}
-
-interface ExportOptions {
-  format: 'json' | 'csv' | 'pdf';
-  includeAnswers: boolean;
-  includeFlags: boolean;
-  includeTimeline: boolean;
-  includePerformanceData: boolean;
-  includePersonalData: boolean;
-}
-
-export const ExportControls: React.FC<ExportControlsProps> = ({
+export const ExportControls = ({
   session,
   flags,
   riskScore,
   className = ''
 }) => {
-  const [exportOptions, setExportOptions] = useState<ExportOptions>({
+  const [exportOptions, setExportOptions] = useState({
     format: 'pdf',
     includeAnswers: true,
     includeFlags: true,
@@ -38,7 +20,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({
     includePersonalData: false
   });
   const [isExporting, setIsExporting] = useState(false);
-  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [exportStatus, setExportStatus] = useState(null);
 
   const exportManager = new ExportManager();
 
@@ -101,7 +83,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({
     return Math.round(baseSize);
   };
 
-  const getFormatDescription = (format: string) => {
+  const getFormatDescription = (format) => {
     switch (format) {
       case 'json':
         return 'Machine-readable format with complete data structure. Best for technical analysis.';
@@ -130,7 +112,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({
         <div className="mb-6">
           <h4 className="text-lg font-medium text-gray-900 mb-3">Export Format</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {(['json', 'csv', 'pdf'] as const).map((format) => (
+            {(['json', 'csv', 'pdf']).map((format) => (
               <label
                 key={format}
                 className={`relative flex cursor-pointer rounded-lg border p-4 focus:outline-none ${
@@ -144,7 +126,7 @@ export const ExportControls: React.FC<ExportControlsProps> = ({
                   name="format"
                   value={format}
                   checked={exportOptions.format === format}
-                  onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value as any }))}
+                  onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value }))}
                   className="sr-only"
                 />
                 <div className="flex flex-col">

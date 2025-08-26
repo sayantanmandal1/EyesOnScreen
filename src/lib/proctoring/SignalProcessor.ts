@@ -74,17 +74,17 @@ export interface ThresholdConfig {
 export class SignalProcessor {
   private config: ProctorConfig;
   private calibrationProfile: CalibrationProfile | null = null;
-  private thresholds: ThresholdConfig;
-  private weights: SignalWeights;
+  private thresholds!: ThresholdConfig;
+  private weights!: SignalWeights;
   
   // Temporal consistency tracking
-  private decisionHistory: CircularBuffer<boolean>;
-  private confidenceHistory: CircularBuffer<number>;
-  private gazeHistory: CircularBuffer<{ x: number; y: number; z: number }>;
-  private headPoseHistory: CircularBuffer<{ yaw: number; pitch: number; roll: number }>;
+  private decisionHistory!: CircularBuffer<boolean>;
+  private confidenceHistory!: CircularBuffer<number>;
+  private gazeHistory!: CircularBuffer<{ x: number; y: number; z: number }>;
+  private headPoseHistory!: CircularBuffer<{ yaw: number; pitch: number; roll: number }>;
   
   // Performance tracking
-  private processingTimes: CircularBuffer<number>;
+  private processingTimes!: CircularBuffer<number>;
 
   constructor(config: ProctorConfig, calibrationProfile?: CalibrationProfile) {
     this.config = config;

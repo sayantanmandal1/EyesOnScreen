@@ -196,6 +196,14 @@ export class AlertEngine {
         soft: 'Please keep your eyes on the screen',
         hard: 'ATTENTION: Frequent downward glances detected',
       },
+      INTEGRITY_VIOLATION: {
+        soft: 'Please maintain quiz integrity',
+        hard: 'ATTENTION: Integrity violation detected',
+      },
+      FULLSCREEN_EXIT: {
+        soft: 'Please return to fullscreen mode',
+        hard: 'ATTENTION: Fullscreen mode required',
+      },
     };
 
     return messages[flag.type]?.[severity] || `${severity} alert: ${flag.type}`;

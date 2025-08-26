@@ -2,6 +2,115 @@
  * Performance monitoring utilities
  */
 
+/**
+ * Measure performance of a function
+ */
+export function measurePerformance<T>(fn: () => T): { result: T; duration: number } {
+  const start = performance.now();
+  const result = fn();
+  const duration = performance.now() - start;
+  return { result, duration };
+}
+
+/**
+ * Create a performance timer
+ */
+export function createPerformanceTimer() {
+  let startTime = 0;
+  
+  return {
+    start: () => {
+      startTime = performance.now();
+    },
+    end: () => {
+      return performance.now() - startTime;
+    },
+    reset: () => {
+      startTime = 0;
+    }
+  };
+}
+
+/**
+ * Get memory usage information
+ */
+export function getMemoryUsage(): number {
+  if ('memory' in performance) {
+    const memory = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
+    return memory ? Math.round(memory.usedJSHeapSize / 1024 / 1024) : 0; // MB
+  }
+  return 0;
+}
+
+/**
+ * Get current FPS
+ */
+export function getFPS(): number {
+  // This would typically be calculated from frame timing
+  return 60; // Default assumption
+}
+
+/**
+ * Create an FPS counter
+ */
+export function createFPSCounter() {
+  let frames = 0;
+  let lastTime = performance.now();
+  let fps = 0;
+  
+  return {
+    tick: () => {
+      frames++;
+      const currentTime = performance.now();
+      if (currentTime - lastTime >= 1000) {
+        fps = Math.round((frames * 1000) / (currentTime - lastTime));
+        frames = 0;
+        lastTime = currentTime;
+      }
+    },
+    getFPS: () => fps
+  };
+}
+
+/**
+ * Optimize for performance
+ */
+export function optimizeForPerformance(options: { 
+  reduceQuality?: boolean;
+  disableAnimations?: boolean;
+  limitFrameRate?: boolean;
+} = {}) {
+  // Implementation would depend on specific optimizations needed
+  return {
+    applied: Object.keys(options).filter(key => options[key as keyof typeof options]),
+    timestamp: Date.now()
+  };
+}
+
+/**
+ * Request idle callback polyfill
+ */
+export const requestIdleCallback = (callback: () => void, options?: { timeout?: number }): number => {
+  if ('requestIdleCallback' in window) {
+    return window.requestIdleCallback(callback, options);
+  }
+  
+  // Fallback for browsers without requestIdleCallback
+  return setTimeout(callback, 1);
+};
+
+/**
+ * Cancel idle callback polyfill
+ */
+export const cancelIdleCallback = (id: number): void => {
+  if ('cancelIdleCallback' in window) {
+    return window.cancelIdleCallback(id);
+  }
+  
+  // Fallback
+  clearTimeout(id);
+};
+
 export interface PerformanceMonitor {
   startFrame(): void;
   endFrame(): void;

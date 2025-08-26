@@ -4,22 +4,9 @@
  * Displays question and total time remaining with visual status indicators
  */
 
-import React from 'react';
-import { TimerManager } from '../../lib/quiz/TimerManager';
+import { useState, useEffect } from 'react';
 
-interface CountdownDisplayProps {
-  questionTime: string;
-  totalTime: string;
-  questionStatus: 'normal' | 'warning' | 'critical' | 'expired';
-  totalStatus: 'normal' | 'warning' | 'critical' | 'expired';
-  questionProgress: number; // 0-100 percentage
-  totalProgress: number; // 0-100 percentage
-  showQuestionTimer?: boolean;
-  showTotalTimer?: boolean;
-  className?: string;
-}
-
-export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
+export const CountdownDisplay = ({
   questionTime,
   totalTime,
   questionStatus,
@@ -30,7 +17,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
   showTotalTimer = true,
   className = ''
 }) => {
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'critical':
         return 'text-red-600 bg-red-50 border-red-200';
@@ -43,7 +30,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
     }
   };
 
-  const getProgressColor = (status: string): string => {
+  const getProgressColor = (status) => {
     switch (status) {
       case 'critical':
         return 'bg-red-500';
@@ -56,7 +43,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
     }
   };
 
-  const shouldPulse = (status: string): boolean => {
+  const shouldPulse = (status) => {
     return status === 'critical' || status === 'expired';
   };
 
@@ -100,7 +87,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
 
           {questionStatus === 'expired' && (
             <div className="mt-2 text-sm font-medium text-red-700">
-              Time&apos;s up!
+              Time's up!
             </div>
           )}
         </div>
@@ -156,17 +143,17 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
 /**
  * Hook for managing countdown display state
  */
-export const useCountdownDisplay = (timerManager: TimerManager | null) => {
-  const [displayState, setDisplayState] = React.useState({
+export const useCountdownDisplay = (timerManager) => {
+  const [displayState, setDisplayState] = useState({
     questionTime: '00:00',
     totalTime: '00:00',
-    questionStatus: 'normal' as const,
-    totalStatus: 'normal' as const,
+    questionStatus: 'normal',
+    totalStatus: 'normal',
     questionProgress: 0,
     totalProgress: 0
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!timerManager) {
       return;
     }

@@ -20,6 +20,17 @@ jest.mock('@mediapipe/face_mesh', () => ({
   }))
 }));
 
+// Mock video element
+const mockVideoElement = {
+  play: jest.fn().mockResolvedValue(undefined),
+  pause: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  videoWidth: 640,
+  videoHeight: 480,
+  srcObject: null,
+} as unknown as HTMLVideoElement;
+
 // Mock canvas and WebGL context
 const mockCanvas = {
   getContext: jest.fn().mockReturnValue({
@@ -86,8 +97,36 @@ describe('Camera Pipeline Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    permissionManager = new CameraPermissionManager();
-    streamManager = new CameraStreamManager();
+    permissionManager = new CameraPermissionManager({
+      constraints: {
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: 'user'
+        },
+        audio: false
+      },
+      maxRetries: 3,
+      retryDelay: 1000,
+      reconnectDelay: 2000,
+      maxReconnectAttempts: 5
+    });
+    streamManager = new CameraStreamManager({
+      constraints: {
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: 'user'
+        },
+        audio: false
+      },
+      maxRetries: 3,
+      retryDelay: 1000,
+      reconnectDelay: 2000,
+      maxReconnectAttempts: 5
+    }, permissionManager);
     faceDetector = new FaceDetector();
     gazeEstimator = new GazeEstimator();
     headPoseEstimator = new HeadPoseEstimator();
@@ -102,16 +141,16 @@ describe('Camera Pipeline Integration', () => {
   describe('End-to-End Camera Setup', () => {
     it('should complete full camera initialization flow', async () => {
       // Step 1: Request camera permission
-      const permissionResult = await permissionManager.requestPermission();
+      const permissionResult = await permissionManager.requestPermissionWithResult();
       expect(permissionResult.granted).toBe(true);
 
       // Step 2: Initialize camera stream
-      const streamResult = await streamManager.initialize();
+      const streamResult = await streamManager.initializeWithResult();
       expect(streamResult.success).toBe(true);
       expect(streamResult.stream).toBe(mockStream);
 
       // Step 3: Verify stream is active
-      expect(streamManager.isActive()).toBe(true);
+      expect(streamManager.isActive).toBe(true);
       expect(streamManager.getStream()).toBe(mockStream);
     });
 

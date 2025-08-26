@@ -28,7 +28,6 @@ export type {
 
 export { SecondaryObjectDetector } from './SecondaryObjectDetector';
 export type {
-  FaceDetectionResult,
   DeviceDetectionResult,
   SecondaryObjectDetection,
   SecondaryObjectDetectorConfig

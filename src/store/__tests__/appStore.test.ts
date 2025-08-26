@@ -1,5 +1,5 @@
 import { useAppStore } from '../appStore';
-import { VisionSignals, FlagEvent, CalibrationProfile } from '../types';
+import { AppStore, VisionSignals, FlagEvent, CalibrationProfile } from '../types';
 
 // Mock Zustand
 jest.mock('zustand', () => ({
@@ -10,7 +10,7 @@ jest.mock('zustand', () => ({
 }));
 
 describe('AppStore', () => {
-  let store: ReturnType<typeof useAppStore>;
+  let store: AppStore;
 
   beforeEach(() => {
     store = useAppStore();
@@ -127,8 +127,7 @@ describe('AppStore', () => {
           mean: 128,
           variance: 10
         },
-        quality: 0.9,
-        timestamp: Date.now()
+        quality: 0.9
       };
 
       store.setCalibrationProfile(profile);

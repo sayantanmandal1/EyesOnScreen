@@ -234,8 +234,8 @@ export class MediaPipeOptimizer {
       width = imageData.width;
       height = imageData.height;
     } else {
-      width = imageData.width || imageData.videoWidth || 640;
-      height = imageData.height || imageData.videoHeight || 480;
+      width = imageData.width || (imageData as any).videoWidth || 640;
+      height = imageData.height || (imageData as any).videoHeight || 480;
     }
     
     const bufferSize = width * height * 4; // RGBA

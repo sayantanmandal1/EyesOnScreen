@@ -2,17 +2,9 @@
  * ToastNotification - Soft alert toast notification component with accessibility
  */
 
-import React, { useEffect, useState, useRef } from 'react';
-import { AlertState } from '../../lib/proctoring/AlertEngine';
+import { useEffect, useState, useRef } from 'react';
 
-interface ToastNotificationProps {
-  alert: AlertState;
-  onDismiss: (alertId: string) => void;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
-  duration?: number;
-}
-
-export const ToastNotification: React.FC<ToastNotificationProps> = ({
+export const ToastNotification = ({
   alert,
   onDismiss,
   position = 'top-right',
@@ -21,9 +13,9 @@ export const ToastNotification: React.FC<ToastNotificationProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const toastRef = useRef<HTMLDivElement>(null);
-  const dismissButtonRef = useRef<HTMLButtonElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastRef = useRef(null);
+  const dismissButtonRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     // Animate in
@@ -54,7 +46,7 @@ export const ToastNotification: React.FC<ToastNotificationProps> = ({
 
   useEffect(() => {
     // Keyboard navigation
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event) => {
       if (!toastRef.current?.contains(document.activeElement)) return;
 
       switch (event.key) {
@@ -76,7 +68,7 @@ export const ToastNotification: React.FC<ToastNotificationProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const createLiveRegion = (): HTMLElement => {
+  const createLiveRegion = () => {
     const existing = document.getElementById('toast-announcements');
     if (existing) return existing;
 

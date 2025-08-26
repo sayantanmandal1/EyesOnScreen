@@ -126,9 +126,9 @@ export class IntegrityEnforcer {
   isFullscreen(): boolean {
     return !!(
       document.fullscreenElement ||
-      (document as any).webkitFullscreenElement ||
-      (document as any).mozFullScreenElement ||
-      (document as any).msFullscreenElement
+      (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement ||
+      (document as Document & { mozFullScreenElement?: Element }).mozFullScreenElement ||
+      (document as Document & { msFullscreenElement?: Element }).msFullscreenElement
     );
   }
 
@@ -141,12 +141,12 @@ export class IntegrityEnforcer {
       
       if (element.requestFullscreen) {
         await element.requestFullscreen();
-      } else if ((element as any).webkitRequestFullscreen) {
-        await (element as any).webkitRequestFullscreen();
-      } else if ((element as any).mozRequestFullScreen) {
-        await (element as any).mozRequestFullScreen();
-      } else if ((element as any).msRequestFullscreen) {
-        await (element as any).msRequestFullscreen();
+      } else if ((element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
+        await (element as HTMLElement & { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen();
+      } else if ((element as HTMLElement & { mozRequestFullScreen?: () => Promise<void> }).mozRequestFullScreen) {
+        await (element as HTMLElement & { mozRequestFullScreen: () => Promise<void> }).mozRequestFullScreen();
+      } else if ((element as HTMLElement & { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen) {
+        await (element as HTMLElement & { msRequestFullscreen: () => Promise<void> }).msRequestFullscreen();
       } else {
         return false;
       }
@@ -290,7 +290,7 @@ export class IntegrityEnforcer {
     
     // Store interval for cleanup
     this.eventListeners.push({
-      element: window as any,
+      element: window as Window & EventTarget,
       event: 'cleanup',
       handler: () => clearInterval(devToolsInterval)
     });

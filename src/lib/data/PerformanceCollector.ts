@@ -111,7 +111,7 @@ export class PerformanceCollector {
       issues.push(`High memory usage: ${metrics.memoryUsage.toFixed(1)}MB > ${this.thresholds.maxMemoryUsage}MB`);
     }
 
-    if (metrics.cpuUsage > this.thresholds.maxCpuUsage) {
+    if (metrics.cpuUsage && metrics.cpuUsage > this.thresholds.maxCpuUsage) {
       issues.push(`High CPU usage: ${metrics.cpuUsage.toFixed(1)}% > ${this.thresholds.maxCpuUsage}%`);
     }
 
@@ -188,7 +188,7 @@ export class PerformanceCollector {
       recommendations.push('Clear old data buffers and optimize memory usage');
     }
 
-    if (metrics.droppedFrames > 10) {
+    if (metrics.droppedFrames && metrics.droppedFrames > 10) {
       recommendations.push('Increase processing timeout or reduce frame rate');
     }
 

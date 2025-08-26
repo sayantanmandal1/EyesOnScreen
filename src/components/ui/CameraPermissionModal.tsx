@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { CameraPermissionManager, DEFAULT_CAMERA_CONFIG } from '../../lib/camera';
 import { useAppStore } from '../../store';
 
@@ -25,7 +25,7 @@ export const CameraPermissionModal: React.FC<CameraPermissionModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  const permissionManager = React.useMemo(() => {
+  const permissionManager = useMemo(() => {
     const manager = new CameraPermissionManager(DEFAULT_CAMERA_CONFIG);
 
     manager.on('permissionGranted', (stream) => {

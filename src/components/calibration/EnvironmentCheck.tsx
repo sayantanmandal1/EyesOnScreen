@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 interface EnvironmentCheckProps {
-  onComplete: (data: any) => void;
+  onComplete: (data: { lighting: number; stability: number; quality: number }) => void;
   isProcessing: boolean;
 }
 
@@ -15,7 +15,7 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
 }) => {
   const [isCollecting, setIsCollecting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [collectedData, setCollectedData] = useState<any[]>([]);
+  const [collectedData, setCollectedData] = useState<{ lighting: number; stability: number; quality: number }[]>([]);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(true);
   const [currentCheck, setCurrentCheck] = useState('');

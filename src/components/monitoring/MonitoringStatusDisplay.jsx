@@ -2,23 +2,16 @@
  * Real-time monitoring status display with indicators for eyes, head pose, and lighting
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { VisionSignals } from '../../lib/vision/types';
 
-interface MonitoringStatusDisplayProps {
-  className?: string;
-  compact?: boolean;
-  showDetails?: boolean;
-}
-
-export const MonitoringStatusDisplay: React.FC<MonitoringStatusDisplayProps> = ({
+export const MonitoringStatusDisplay = ({
   className = '',
   compact = false,
   showDetails = true
 }) => {
   const { currentSignals, monitoring, privacySettings } = useAppStore();
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState(0);
 
   useEffect(() => {
     if (currentSignals) {
@@ -26,19 +19,19 @@ export const MonitoringStatusDisplay: React.FC<MonitoringStatusDisplayProps> = (
     }
   }, [currentSignals]);
 
-  const getStatusColor = (isGood: boolean, confidence: number = 1) => {
+  const getStatusColor = (isGood, confidence = 1) => {
     if (!isGood) return 'text-red-500 bg-red-100';
     if (confidence < 0.7) return 'text-yellow-500 bg-yellow-100';
     return 'text-green-500 bg-green-100';
   };
 
-  const getStatusIcon = (isGood: boolean, confidence: number = 1) => {
+  const getStatusIcon = (isGood, confidence = 1) => {
     if (!isGood) return '❌';
     if (confidence < 0.7) return '⚠️';
     return '✅';
   };
 
-  const formatConfidence = (confidence: number) => {
+  const formatConfidence = (confidence) => {
     return Math.round(confidence * 100);
   };
 

@@ -9,7 +9,7 @@ import syncUploadHandler from '../../../pages/api/sync/upload';
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-jwt-secret-key';
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 
 describe('API Endpoints', () => {
   describe('/api/auth/api-key', () => {

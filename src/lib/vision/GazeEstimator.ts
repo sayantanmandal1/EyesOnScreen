@@ -14,8 +14,11 @@ export interface GazeVector {
 export interface GazePoint {
   x: number; // Screen coordinates (pixels)
   y: number;
+  z?: number; // Optional depth coordinate
   confidence: number;
   timestamp: number;
+  gazeVector?: GazeVector; // Optional gaze vector
+  eyesOnScreen?: boolean; // Optional flag for screen attention
 }
 
 export interface IrisData {
@@ -371,8 +374,12 @@ export class GazeEstimator {
     return {
       x: clampedX,
       y: clampedY,
+      z: gazeVector.z,
       confidence: gazeVector.confidence * 0.7, // Reduce confidence for uncalibrated mapping
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      gazeVector,
+      eyesOnScreen: clampedX >= 0 && clampedX <= this.config.screenWidth && 
+                   clampedY >= 0 && clampedY <= this.config.screenHeight
     };
   }
 
@@ -395,8 +402,12 @@ export class GazeEstimator {
     return {
       x: clampedX,
       y: clampedY,
+      z: gazeVector.z,
       confidence: gazeVector.confidence,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      gazeVector,
+      eyesOnScreen: clampedX >= 0 && clampedX <= this.config.screenWidth && 
+                   clampedY >= 0 && clampedY <= this.config.screenHeight
     };
   }
 
@@ -626,5 +637,22 @@ export class GazeEstimator {
    */
   get calibrationPointCount(): number {
     return this.calibrationData.screenPoints.length;
+  }
+
+  /**
+   * Initialize the gaze estimator
+   */
+  async initialize(): Promise<void> {
+    // Reset calibration and prepare for gaze estimation
+    this.resetCalibration();
+    this.previousGaze = null;
+  }
+
+  /**
+   * Dispose of resources
+   */
+  dispose(): void {
+    this.resetCalibration();
+    this.previousGaze = null;
   }
 }

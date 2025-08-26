@@ -2,20 +2,9 @@
  * Enhanced calibration point display system with visual feedback
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { CalibrationPoint } from '../../lib/calibration/types';
-import { MediaPipeResults } from '../../types/common';
+import { useState, useEffect, useCallback } from 'react';
 
-interface CalibrationPointDisplayProps {
-  points: CalibrationPoint[];
-  currentPointIndex: number;
-  onPointComplete: (pointIndex: number, data: MediaPipeResults) => void;
-  showProgress?: boolean;
-  allowRetry?: boolean;
-  pointDuration?: number;
-}
-
-export const CalibrationPointDisplay: React.FC<CalibrationPointDisplayProps> = ({
+export const CalibrationPointDisplay = ({
   points,
   currentPointIndex,
   onPointComplete,
@@ -73,9 +62,9 @@ export const CalibrationPointDisplay: React.FC<CalibrationPointDisplayProps> = (
     onPointComplete(currentPointIndex, completionData);
   }, [currentPoint, currentPointIndex, pointStartTime, onPointComplete]);
 
-  const getPointStyle = (point: CalibrationPoint, index: number) => {
+  const getPointStyle = (point, index) => {
     const baseStyle = {
-      position: 'absolute' as const,
+      position: 'absolute',
       left: `${point.x * 100}%`,
       top: `${point.y * 100}%`,
       transform: 'translate(-50%, -50%)',
@@ -95,7 +84,7 @@ export const CalibrationPointDisplay: React.FC<CalibrationPointDisplayProps> = (
     };
   };
 
-  const getPointClassName = (point: CalibrationPoint, index: number) => {
+  const getPointClassName = (point, index) => {
     const baseClasses = 'rounded-full flex items-center justify-center font-bold';
     
     if (index === currentPointIndex && isActive) {

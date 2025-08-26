@@ -2,34 +2,33 @@
  * IntegrityViolationAlert - Component for displaying integrity violation alerts
  */
 
-import React from 'react';
-import { AlertTriangle, Shield, Eye, Mouse, Code, Maximize, ExternalLink } from 'lucide-react';
-import { IntegrityViolation } from '../../lib/quiz/types';
+import {
+  AlertTriangle,
+  Shield,
+  Mouse,
+  Code,
+  Maximize,
+  ExternalLink
+} from 'lucide-react';
 
-export interface IntegrityViolationAlertProps {
-  violation: IntegrityViolation;
-  onAcknowledge?: () => void;
-  className?: string;
-}
-
-const getViolationIcon = (type: IntegrityViolation['type']) => {
+const getViolationIcon = (type) => {
   switch (type) {
     case 'copy-paste':
-      return <Shield className="w-5 h-5" />;
+      return <Shield size={20} />;
     case 'right-click':
-      return <Mouse className="w-5 h-5" />;
+      return <Mouse size={20} />;
     case 'dev-tools':
-      return <Code className="w-5 h-5" />;
+      return <Code size={20} />;
     case 'fullscreen-exit':
-      return <Maximize className="w-5 h-5" />;
+      return <Maximize size={20} />;
     case 'tab-blur':
-      return <ExternalLink className="w-5 h-5" />;
+      return <ExternalLink size={20} />;
     default:
-      return <AlertTriangle className="w-5 h-5" />;
+      return <AlertTriangle size={20} />;
   }
 };
 
-const getViolationTitle = (type: IntegrityViolation['type']) => {
+const getViolationTitle = (type) => {
   switch (type) {
     case 'copy-paste':
       return 'Copy/Paste Detected';
@@ -46,7 +45,7 @@ const getViolationTitle = (type: IntegrityViolation['type']) => {
   }
 };
 
-const getViolationMessage = (type: IntegrityViolation['type']) => {
+const getViolationMessage = (type) => {
   switch (type) {
     case 'copy-paste':
       return 'Copy and paste operations are not allowed during the quiz. This action has been blocked and flagged.';
@@ -63,7 +62,7 @@ const getViolationMessage = (type: IntegrityViolation['type']) => {
   }
 };
 
-const getViolationSeverity = (type: IntegrityViolation['type']): 'warning' | 'error' => {
+const getViolationSeverity = (type) => {
   switch (type) {
     case 'copy-paste':
     case 'dev-tools':
@@ -77,7 +76,7 @@ const getViolationSeverity = (type: IntegrityViolation['type']): 'warning' | 'er
   }
 };
 
-export const IntegrityViolationAlert: React.FC<IntegrityViolationAlertProps> = ({
+export const IntegrityViolationAlert = ({
   violation,
   onAcknowledge,
   className = ''
@@ -121,7 +120,7 @@ export const IntegrityViolationAlert: React.FC<IntegrityViolationAlertProps> = (
               <p className={`mt-2 text-sm ${classes.message}`}>
                 {message}
               </p>
-              
+
               {violation.details && Object.keys(violation.details).length > 0 && (
                 <div className="mt-3 text-xs text-gray-600">
                   <details>

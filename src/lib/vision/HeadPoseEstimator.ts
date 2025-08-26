@@ -537,4 +537,26 @@ export class HeadPoseEstimator {
   get configuration(): HeadPoseEstimatorConfig {
     return { ...this.config };
   }
+
+  /**
+   * Alias for estimatePose for backward compatibility
+   */
+  estimateHeadPose(landmarks: Float32Array): HeadPose {
+    // Default image dimensions if not provided
+    return this.estimatePose(landmarks, 640, 480);
+  }
+
+  /**
+   * Initialize the head pose estimator
+   */
+  async initialize(): Promise<void> {
+    this.reset();
+  }
+
+  /**
+   * Dispose of resources
+   */
+  dispose(): void {
+    this.reset();
+  }
 }

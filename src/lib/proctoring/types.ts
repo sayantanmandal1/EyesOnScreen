@@ -63,6 +63,22 @@ export interface RiskScoreConfig {
   reviewThreshold: number;
 }
 
+export interface PerformanceMetrics {
+  fps: number;
+  processingLatency: number;
+  memoryUsage: number;
+  cpuUsage?: number;
+  droppedFrames?: number;
+  timestamp: number;
+}
+
+export interface PerformanceSnapshot {
+  fps: number;
+  processingLatency: number;
+  memoryUsage: number;
+  timestamp: number;
+}
+
 export interface MonitoringState {
   isActive: boolean;
   currentSignals: VisionSignals | null;

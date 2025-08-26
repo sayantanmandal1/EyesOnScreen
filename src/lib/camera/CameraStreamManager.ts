@@ -163,6 +163,46 @@ export class CameraStreamManager {
     this.state.reconnectAttempts = 0;
   }
 
+  /**
+   * Initialize method alias for backward compatibility
+   */
+  async initialize(): Promise<MediaStream> {
+    return this.initializeStream();
+  }
+
+  /**
+   * Destroy method alias for cleanup
+   */
+  destroy(): void {
+    this.cleanup();
+  }
+
+  /**
+   * Check if stream is active
+   */
+  get isActive(): boolean {
+    return this.state.isActive;
+  }
+
+  /**
+   * Get current stream
+   */
+  getStream(): MediaStream | null {
+    return this.getCurrentStream();
+  }
+
+  /**
+   * Initialize with result object (for test compatibility)
+   */
+  async initializeWithResult(): Promise<{ success: boolean; stream?: MediaStream; error?: Error }> {
+    try {
+      const stream = await this.initialize();
+      return { success: true, stream };
+    } catch (error) {
+      return { success: false, error: error as Error };
+    }
+  }
+
   private setupStreamEventListeners(stream: MediaStream): void {
     const tracks = stream.getTracks();
     

@@ -47,29 +47,29 @@ export class TemporalFilterSystem {
   private config: FilterConfig;
   
   // Landmark filtering (468 landmarks * 3 coordinates)
-  private landmarkKalmanFilter: VectorKalmanFilter;
+  private landmarkKalmanFilter!: VectorKalmanFilter;
   
   // Gaze vector filtering
-  private gazeKalmanFilter: VectorKalmanFilter;
-  private gazeEMAFilter: VectorExponentialMovingAverage;
-  private gazeOutlierDetector: OutlierDetector;
+  private gazeKalmanFilter!: VectorKalmanFilter;
+  private gazeEMAFilter!: VectorExponentialMovingAverage;
+  private gazeOutlierDetector!: OutlierDetector;
   
   // Head pose filtering
-  private headPoseKalmanFilter: VectorKalmanFilter;
-  private headPoseEMAFilter: VectorExponentialMovingAverage;
-  private headPoseOutlierDetector: OutlierDetector;
+  private headPoseKalmanFilter!: VectorKalmanFilter;
+  private headPoseEMAFilter!: VectorExponentialMovingAverage;
+  private headPoseOutlierDetector!: OutlierDetector;
   
   // Environment filtering
-  private lightingEMAFilter: ExponentialMovingAverage;
-  private shadowEMAFilter: ExponentialMovingAverage;
+  private lightingEMAFilter!: ExponentialMovingAverage;
+  private shadowEMAFilter!: ExponentialMovingAverage;
   
   // Signal buffers for stability analysis
-  private gazeBuffer: CircularBuffer<{ x: number; y: number; z: number; confidence: number }>;
-  private headPoseBuffer: CircularBuffer<{ yaw: number; pitch: number; roll: number; confidence: number }>;
-  private lightingBuffer: CircularBuffer<number>;
+  private gazeBuffer!: CircularBuffer<{ x: number; y: number; z: number; confidence: number }>;
+  private headPoseBuffer!: CircularBuffer<{ yaw: number; pitch: number; roll: number; confidence: number }>;
+  private lightingBuffer!: CircularBuffer<number>;
   
   // Confidence tracking
-  private confidenceBuffer: CircularBuffer<number>;
+  private confidenceBuffer!: CircularBuffer<number>;
 
   constructor(config?: Partial<FilterConfig>) {
     this.config = {

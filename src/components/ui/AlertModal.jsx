@@ -2,27 +2,20 @@
  * AlertModal - Hard alert modal dialog with sound and full accessibility
  */
 
-import React, { useEffect, useRef } from 'react';
-import { AlertState } from '../../lib/proctoring/AlertEngine';
+import { useEffect, useRef } from 'react';
 
-interface AlertModalProps {
-  alert: AlertState;
-  onAcknowledge: (alertId: string) => void;
-  onDismiss: (alertId: string) => void;
-}
-
-export const AlertModal: React.FC<AlertModalProps> = ({
+export const AlertModal = ({
   alert,
   onAcknowledge,
   onDismiss,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const acknowledgeButtonRef = useRef<HTMLButtonElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef(null);
+  const acknowledgeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
   useEffect(() => {
     // Store previous focus
-    previousFocusRef.current = document.activeElement as HTMLElement;
+    previousFocusRef.current = document.activeElement;
 
     // Focus the acknowledge button when modal opens
     if (acknowledgeButtonRef.current) {
@@ -48,12 +41,12 @@ export const AlertModal: React.FC<AlertModalProps> = ({
 
   useEffect(() => {
     // Focus trap within modal
-    const handleTabKey = (event: KeyboardEvent) => {
+    const handleTabKey = (event) => {
       if (event.key !== 'Tab') return;
 
       const focusableElements = modalRef.current?.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      ) as NodeListOf<HTMLElement>;
+      );
 
       if (!focusableElements || focusableElements.length === 0) return;
 
@@ -76,7 +69,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
     };
 
     // Handle escape key
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleEscape = (event) => {
       if (event.key === 'Escape') {
         handleAcknowledge();
       }
@@ -91,7 +84,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
     };
   }, []);
 
-  const createLiveRegion = (): HTMLElement => {
+  const createLiveRegion = () => {
     const existing = document.getElementById('alert-announcements');
     if (existing) return existing;
 
@@ -108,7 +101,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
     onAcknowledge(alert.id);
   };
 
-  const handleBackdropClick = (event: React.MouseEvent) => {
+  const handleBackdropClick = (event) => {
     if (event.target === modalRef.current) {
       // Don't allow dismissing hard alerts by clicking backdrop
       // User must acknowledge
@@ -170,7 +163,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
     },
   };
 
-  const classes = colorClasses[color as keyof typeof colorClasses];
+  const classes = colorClasses[color];
 
   return (
     <div

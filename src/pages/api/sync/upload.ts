@@ -48,7 +48,7 @@ const batchSchema = z.object({
     ]),
     severity: z.enum(['soft', 'hard']),
     confidence: z.number().min(0).max(1),
-    details: z.record(z.unknown()),
+    details: z.record(z.string(), z.unknown()),
     questionId: z.string().optional(),
   })),
   metadata: z.object({
@@ -115,7 +115,7 @@ export default async function handler(
     }
 
     // Check permissions
-    if (!authResult.user.scope.includes('audit:write')) {
+    if (!authResult.user || !authResult.user.scope.includes('audit:write')) {
       return res.status(403).json({
         success: false,
         error: 'Insufficient permissions',
@@ -150,7 +150,7 @@ export default async function handler(
 
     // Store audit logs
     const storageResult = await storeAuditLogs(sanitizedBatches, {
-      userId: authResult.user.sub,
+      userId: authResult.user?.sub || 'unknown',
       timestamp,
       ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown',
       userAgent: req.headers['user-agent'] || 'unknown',
@@ -184,7 +184,7 @@ export default async function handler(
         success: false,
         error: 'Invalid request format',
         code: 'VALIDATION_ERROR',
-        errors: error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+        errors: error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`),
       });
     }
 

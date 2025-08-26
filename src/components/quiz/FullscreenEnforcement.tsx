@@ -59,7 +59,7 @@ export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-6 h-6 text-orange-500" />
+            <AlertTriangle size={24} color="#f59e0b" />
             <h2 className="text-xl font-semibold text-gray-900">
               Fullscreen Required
             </h2>
@@ -70,7 +70,7 @@ export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
               className="text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X size={20} />
             </button>
           )}
         </div>
@@ -105,7 +105,7 @@ export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors
                      flex items-center justify-center space-x-2"
           >
-            <Maximize className="w-4 h-4" />
+            <Maximize size={16} />
             <span>
               {isRequesting ? 'Requesting...' : 'Enable Fullscreen'}
             </span>

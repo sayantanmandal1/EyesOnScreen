@@ -173,4 +173,16 @@ export class CameraPermissionManager {
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  /**
+   * Request permission with result object (for test compatibility)
+   */
+  async requestPermissionWithResult(): Promise<{ granted: boolean; stream?: MediaStream; error?: Error }> {
+    try {
+      const stream = await this.requestPermission();
+      return { granted: true, stream };
+    } catch (error) {
+      return { granted: false, error: error as Error };
+    }
+  }
 }

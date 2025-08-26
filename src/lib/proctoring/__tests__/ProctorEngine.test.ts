@@ -220,7 +220,12 @@ describe('ProctorEngine', () => {
     it('should update configuration', () => {
       const newConfig = {
         thresholds: {
-          gazeConfidence: 0.8
+          gazeConfidence: 0.8,
+          headYawMax: 30,
+          headPitchMax: 25,
+          shadowScoreMax: 0.7,
+          eyesOffDurationMs: 3000,
+          shadowAnomalyDurationMs: 2000
         }
       };
 
@@ -295,7 +300,7 @@ describe('ProctorEngine', () => {
 
     it('should handle frame processing errors', (done) => {
       // Mock video element to cause error
-      mockVideoElement.readyState = 0;
+      Object.defineProperty(mockVideoElement, 'readyState', { value: 0, writable: true });
 
       engine.setCallbacks({
         onError: (error) => {
@@ -333,11 +338,11 @@ describe('ProctorEngine', () => {
       });
 
       // Cause an error then fix it
-      mockVideoElement.readyState = 0;
+      Object.defineProperty(mockVideoElement, 'readyState', { value: 0, writable: true });
       engine.start();
       
       setTimeout(() => {
-        mockVideoElement.readyState = 4;
+        Object.defineProperty(mockVideoElement, 'readyState', { value: 4, writable: true });
       }, 50);
       
       // Fallback timeout

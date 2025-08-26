@@ -616,7 +616,10 @@ describe('Accessibility Integration Tests', () => {
           <button onClick={() => accessibility.announce('Test announcement')}>
             Announce
           </button>
-          <button onClick={() => accessibility.setFocus('#target')}>
+          <button onClick={() => {
+            const target = document.getElementById('target');
+            if (target) accessibility.setFocus(target);
+          }}>
             Set Focus
           </button>
           <div id="target" tabIndex={0}>Target Element</div>

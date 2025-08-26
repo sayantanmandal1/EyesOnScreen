@@ -3,6 +3,136 @@
  */
 
 /**
+ * Announce message to screen readers
+ */
+export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+  ScreenReaderAnnouncer.announce(message, priority);
+}
+
+/**
+ * Set focus to an element
+ */
+export function setFocusToElement(element: HTMLElement): void {
+  element.focus();
+}
+
+/**
+ * Create a focus trap
+ */
+export function trapFocus(container: HTMLElement): () => void {
+  return FocusManager.createFocusTrap(container);
+}
+
+/**
+ * Get accessible name of an element
+ */
+export function getAccessibleName(element: HTMLElement): string {
+  // Check aria-label first
+  const ariaLabel = element.getAttribute('aria-label');
+  if (ariaLabel) return ariaLabel;
+  
+  // Check aria-labelledby
+  const labelledBy = element.getAttribute('aria-labelledby');
+  if (labelledBy) {
+    const labelElement = document.getElementById(labelledBy);
+    if (labelElement) return labelElement.textContent || '';
+  }
+  
+  // Check associated label
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+    const id = element.getAttribute('id');
+    if (id) {
+      const label = document.querySelector(`label[for="${id}"]`);
+      if (label) return label.textContent || '';
+    }
+  }
+  
+  // Fall back to text content
+  return element.textContent || '';
+}
+
+/**
+ * Check color contrast
+ */
+export function checkColorContrast(foreground: [number, number, number], background: [number, number, number]): {
+  ratio: number;
+  meetsAA: boolean;
+  meetsAAA: boolean;
+} {
+  const ratio = ColorContrast.getContrastRatio(foreground, background);
+  return {
+    ratio,
+    meetsAA: ColorContrast.meetsWCAGAA(foreground, background),
+    meetsAAA: ColorContrast.meetsWCAGAAA(foreground, background)
+  };
+}
+
+/**
+ * Validate keyboard navigation
+ */
+export function validateKeyboardNavigation(container: HTMLElement): {
+  focusableElements: number;
+  hasTabIndex: boolean;
+  canNavigate: boolean;
+} {
+  const focusableElements = FocusManager.getFocusableElements(container);
+  const hasTabIndex = focusableElements.some(el => el.hasAttribute('tabindex'));
+  
+  return {
+    focusableElements: focusableElements.length,
+    hasTabIndex,
+    canNavigate: focusableElements.length > 0
+  };
+}
+
+/**
+ * Create ARIA live region
+ */
+export function createAriaLiveRegion(id: string, priority: 'polite' | 'assertive' = 'polite'): HTMLElement {
+  return ScreenReaderAnnouncer.getLiveRegion(id, priority);
+}
+
+/**
+ * Manage focus order
+ */
+export function manageFocusOrder(elements: HTMLElement[]): void {
+  elements.forEach((element, index) => {
+    element.setAttribute('tabindex', index === 0 ? '0' : '-1');
+  });
+}
+
+/**
+ * Add skip link
+ */
+export function addSkipLink(targetId: string, text: string = 'Skip to main content'): HTMLElement {
+  const skipLink = document.createElement('a');
+  skipLink.href = `#${targetId}`;
+  skipLink.textContent = text;
+  skipLink.className = 'skip-link';
+  skipLink.style.cssText = `
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 1000;
+  `;
+  
+  skipLink.addEventListener('focus', () => {
+    skipLink.style.top = '6px';
+  });
+  
+  skipLink.addEventListener('blur', () => {
+    skipLink.style.top = '-40px';
+  });
+  
+  document.body.insertBefore(skipLink, document.body.firstChild);
+  return skipLink;
+}
+
+/**
  * Focus management utilities
  */
 export class FocusManager {

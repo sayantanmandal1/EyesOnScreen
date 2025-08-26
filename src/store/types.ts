@@ -79,3 +79,9 @@ export interface AppActions {
 }
 
 export type AppStore = AppState & AppActions;
+
+// Re-export types that are used in tests
+export type { VisionSignals, CalibrationProfile } from '../lib/vision/types';
+export type { FlagEvent, MonitoringState } from '../lib/proctoring/types';
+export type { QuizSession } from '../lib/quiz/types';
+export type { CalibrationSession } from '../lib/calibration/types';

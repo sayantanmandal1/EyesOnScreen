@@ -456,7 +456,7 @@ export class WasmOptimizer {
   
   private detectSIMDSupport(): boolean {
     try {
-      return typeof WebAssembly.SIMD !== 'undefined';
+      return typeof (WebAssembly as any).SIMD !== 'undefined';
     } catch {
       return false;
     }

@@ -54,29 +54,22 @@ export class LocalStorage {
   }
 
   /**
-   * Create object stores for the database schema
+   * Create object stores for the database
    */
   private createObjectStores(db: IDBDatabase): void {
     // Sessions store
     if (!db.objectStoreNames.contains('sessions')) {
-      const sessionStore = db.createObjectStore('sessions', { keyPath: 'sessionId' });
-      sessionStore.createIndex('startTime', 'startTime', { unique: false });
-      sessionStore.createIndex('endTime', 'endTime', { unique: false });
-    }
-
-    // Calibration profiles store
-    if (!db.objectStoreNames.contains('calibrationProfiles')) {
-      const profileStore = db.createObjectStore('calibrationProfiles', { keyPath: 'id' });
-      profileStore.createIndex('timestamp', 'timestamp', { unique: false });
-      profileStore.createIndex('quality', 'quality', { unique: false });
+      const sessionStore = db.createObjectStore('sessions', { keyPath: 'id' });
+      sessionStore.createIndex('timestamp', 'timestamp', { unique: false });
+      sessionStore.createIndex('userId', 'userId', { unique: false });
     }
 
     // Log entries store
     if (!db.objectStoreNames.contains('logEntries')) {
-      const logStore = db.createObjectStore('logEntries', { keyPath: 'id', autoIncrement: true });
+      const logStore = db.createObjectStore('logEntries', { keyPath: 'id' });
       logStore.createIndex('timestamp', 'timestamp', { unique: false });
       logStore.createIndex('sessionId', 'sessionId', { unique: false });
-      logStore.createIndex('questionId', 'questionId', { unique: false });
+      logStore.createIndex('level', 'level', { unique: false });
     }
 
     // Flags store
@@ -87,6 +80,13 @@ export class LocalStorage {
       flagStore.createIndex('type', 'type', { unique: false });
     }
 
+    // Calibration profiles store
+    if (!db.objectStoreNames.contains('calibrationProfiles')) {
+      const calibrationStore = db.createObjectStore('calibrationProfiles', { keyPath: 'id' });
+      calibrationStore.createIndex('userId', 'userId', { unique: false });
+      calibrationStore.createIndex('createdAt', 'createdAt', { unique: false });
+    }
+
     // Settings store
     if (!db.objectStoreNames.contains('settings')) {
       db.createObjectStore('settings', { keyPath: 'key' });
@@ -94,279 +94,189 @@ export class LocalStorage {
   }
 
   /**
-   * Store calibration profile with compression if enabled
+   * Store session data
+   */
+  async storeSession(sessionData: SessionData): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const compressedData = await this.compressData(sessionData);
+    const transaction = this.db.transaction(['sessions'], 'readwrite');
+    const store = transaction.objectStore('sessions');
+    
+    await this.promisifyRequest(store.put({
+      ...sessionData,
+      data: compressedData,
+      compressed: this.config.compressionEnabled,
+    }));
+  }
+
+  /**
+   * Retrieve session data
+   */
+  async getSession(sessionId: string): Promise<SessionData | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(['sessions'], 'readonly');
+    const store = transaction.objectStore('sessions');
+    const result = await this.promisifyRequest(store.get(sessionId));
+
+    if (!result) return null;
+
+    if (result.compressed) {
+      result.data = await this.decompressData(result.data);
+    }
+
+    return result;
+  }
+
+  /**
+   * Store log entry
+   */
+  async storeLogEntry(logEntry: LogEntry): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(['logEntries'], 'readwrite');
+    const store = transaction.objectStore('logEntries');
+    
+    await this.promisifyRequest(store.put(logEntry));
+    await this.cleanupOldLogs();
+  }
+
+  /**
+   * Retrieve log entries for a session
+   */
+  async getLogEntries(sessionId: string): Promise<LogEntry[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(['logEntries'], 'readonly');
+    const store = transaction.objectStore('logEntries');
+    const index = store.index('sessionId');
+    
+    const results = await this.promisifyRequest(index.getAll(sessionId));
+    return results || [];
+  }
+
+  /**
+   * Store flag event
+   */
+  async storeFlag(flagEvent: FlagEvent): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(['flags'], 'readwrite');
+    const store = transaction.objectStore('flags');
+    
+    await this.promisifyRequest(store.put(flagEvent));
+  }
+
+  /**
+   * Retrieve flags for a session
+   */
+  async getFlags(sessionId: string): Promise<FlagEvent[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(['flags'], 'readonly');
+    const store = transaction.objectStore('flags');
+    const index = store.index('sessionId');
+    
+    const results = await this.promisifyRequest(index.getAll(sessionId));
+    return results || [];
+  }
+
+  /**
+   * Store calibration profile
    */
   async storeCalibrationProfile(profile: CalibrationProfile): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const profileWithMetadata = {
-      ...profile,
-      id: profile.id || `profile_${Date.now()}`,
-      timestamp: Date.now(),
-      compressed: this.config.compressionEnabled,
-    };
-
-    if (this.config.compressionEnabled) {
-      profileWithMetadata.gazeMapping = await this.compressData(profile.gazeMapping);
-    }
-
-    return this.performTransaction('calibrationProfiles', 'readwrite', (store) => {
-      store.put(profileWithMetadata);
-    });
-  }
-
-  /**
-   * Retrieve calibration profile by ID
-   */
-  async getCalibrationProfile(id: string): Promise<CalibrationProfile | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const profile = await this.performTransaction('calibrationProfiles', 'readonly', (store) => {
-      return store.get(id);
-    });
-
-    if (!profile) return null;
-
-    if (profile.compressed && this.config.compressionEnabled) {
-      profile.gazeMapping = await this.decompressData(profile.gazeMapping);
-    }
-
-    return profile;
-  }
-
-  /**
-   * Get the most recent calibration profile
-   */
-  async getLatestCalibrationProfile(): Promise<CalibrationProfile | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return this.performTransaction('calibrationProfiles', 'readonly', (store) => {
-      const index = store.index('timestamp');
-      const request = index.openCursor(null, 'prev');
-      
-      return new Promise((resolve) => {
-        request.onsuccess = async () => {
-          const cursor = request.result;
-          if (cursor) {
-            const profile = cursor.value;
-            if (profile.compressed && this.config.compressionEnabled) {
-              profile.gazeMapping = await this.decompressData(profile.gazeMapping);
-            }
-            resolve(profile);
-          } else {
-            resolve(null);
-          }
-        };
-      });
-    });
-  }
-
-  /**
-   * Store session data with batched log entries
-   */
-  async storeSessionData(sessionData: SessionData): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const transaction = this.db.transaction(['sessions', 'logEntries', 'flags'], 'readwrite');
+    const transaction = this.db.transaction(['calibrationProfiles'], 'readwrite');
+    const store = transaction.objectStore('calibrationProfiles');
     
-    try {
-      // Store session metadata
-      const sessionStore = transaction.objectStore('sessions');
-      await this.promisifyRequest(sessionStore.put(sessionData));
-
-      // Batch store log entries
-      const logStore = transaction.objectStore('logEntries');
-      const batchSize = 1000;
-      
-      for (let i = 0; i < sessionData.logEntries.length; i += batchSize) {
-        const batch = sessionData.logEntries.slice(i, i + batchSize);
-        const compressedBatch = this.config.compressionEnabled 
-          ? await this.compressLogBatch(batch)
-          : batch;
-
-        for (const entry of compressedBatch) {
-          const entryWithSession = {
-            ...entry,
-            sessionId: sessionData.sessionId,
-            id: `${sessionData.sessionId}_${entry.timestamp}`,
-          };
-          await this.promisifyRequest(logStore.put(entryWithSession));
-        }
-      }
-
-      // Store flags
-      const flagStore = transaction.objectStore('flags');
-      for (const flag of sessionData.flags) {
-        const flagWithSession = {
-          ...flag,
-          sessionId: sessionData.sessionId,
-        };
-        await this.promisifyRequest(flagStore.put(flagWithSession));
-      }
-
-      await this.promisifyTransaction(transaction);
-    } catch (error) {
-      transaction.abort();
-      throw error;
-    }
+    await this.promisifyRequest(store.put(profile));
   }
 
   /**
-   * Retrieve session data by ID
+   * Retrieve calibration profile
    */
-  async getSessionData(sessionId: string): Promise<SessionData | null> {
+  async getCalibrationProfile(userId: string): Promise<CalibrationProfile | null> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const session = await this.performTransaction('sessions', 'readonly', (store) => {
-      return store.get(sessionId);
-    });
-
-    if (!session) return null;
-
-    // Load associated log entries
-    const logEntries = await this.getLogEntriesBySession(sessionId);
-    const flags = await this.getFlagsBySession(sessionId);
-
-    return {
-      ...session,
-      logEntries,
-      flags,
-    };
+    const transaction = this.db.transaction(['calibrationProfiles'], 'readonly');
+    const store = transaction.objectStore('calibrationProfiles');
+    const index = store.index('userId');
+    
+    const results = await this.promisifyRequest(index.getAll(userId));
+    
+    if (!results || results.length === 0) return null;
+    
+    // Return the most recent profile
+    return results.sort((a, b) => b.createdAt - a.createdAt)[0];
   }
 
   /**
-   * Get log entries for a specific session
+   * Store setting
    */
-  private async getLogEntriesBySession(sessionId: string): Promise<LogEntry[]> {
+  async storeSetting(key: string, value: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
-    return this.performTransaction('logEntries', 'readonly', (store) => {
-      const index = store.index('sessionId');
-      const request = index.getAll(sessionId);
-      
-      return new Promise((resolve) => {
-        request.onsuccess = async () => {
-          const entries = request.result;
-          if (this.config.compressionEnabled) {
-            const decompressed = await this.decompressLogBatch(entries);
-            resolve(decompressed);
-          } else {
-            resolve(entries);
-          }
-        };
-      });
-    });
+    const transaction = this.db.transaction(['settings'], 'readwrite');
+    const store = transaction.objectStore('settings');
+    
+    await this.promisifyRequest(store.put({ key, value }));
   }
 
   /**
-   * Get flags for a specific session
+   * Retrieve setting
    */
-  private async getFlagsBySession(sessionId: string): Promise<FlagEvent[]> {
+  async getSetting(key: string): Promise<any> {
     if (!this.db) throw new Error('Database not initialized');
 
-    return this.performTransaction('flags', 'readonly', (store) => {
-      const index = store.index('sessionId');
-      return index.getAll(sessionId);
-    });
+    const transaction = this.db.transaction(['settings'], 'readonly');
+    const store = transaction.objectStore('settings');
+    const result = await this.promisifyRequest(store.get(key));
+    
+    return result?.value;
   }
 
   /**
-   * Clean up old data based on retention policy
+   * Clean up old log entries
    */
-  async cleanupOldData(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+  private async cleanupOldLogs(): Promise<void> {
+    if (!this.db) return;
 
+    const transaction = this.db.transaction(['logEntries'], 'readwrite');
+    const store = transaction.objectStore('logEntries');
+    const index = store.index('timestamp');
+    
     const cutoffTime = Date.now() - (this.config.retentionDays * 24 * 60 * 60 * 1000);
-    
-    const transaction = this.db.transaction(['sessions', 'logEntries', 'flags', 'calibrationProfiles'], 'readwrite');
-
-    try {
-      // Clean up old sessions
-      await this.cleanupStore(transaction.objectStore('sessions'), 'startTime', cutoffTime);
-      
-      // Clean up old log entries
-      await this.cleanupStore(transaction.objectStore('logEntries'), 'timestamp', cutoffTime);
-      
-      // Clean up old flags
-      await this.cleanupStore(transaction.objectStore('flags'), 'timestamp', cutoffTime);
-      
-      // Clean up old calibration profiles (keep at least one)
-      await this.cleanupCalibrationProfiles(transaction.objectStore('calibrationProfiles'), cutoffTime);
-
-      await this.promisifyTransaction(transaction);
-    } catch (error) {
-      transaction.abort();
-      throw error;
-    }
-  }
-
-  /**
-   * Clean up a specific object store
-   */
-  private async cleanupStore(store: IDBObjectStore, indexName: string, cutoffTime: number): Promise<void> {
-    const index = store.index(indexName);
     const range = IDBKeyRange.upperBound(cutoffTime);
-    const request = index.openCursor(range);
-
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        } else {
-          resolve();
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  /**
-   * Clean up calibration profiles while keeping at least one
-   */
-  private async cleanupCalibrationProfiles(store: IDBObjectStore, cutoffTime: number): Promise<void> {
-    const allProfiles = await this.promisifyRequest(store.getAll());
     
-    if (allProfiles.length <= 1) return; // Keep at least one profile
-
-    const oldProfiles = allProfiles
-      .filter(profile => profile.timestamp < cutoffTime)
-      .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
-
-    // Keep the newest old profile, delete the rest
-    for (let i = 1; i < oldProfiles.length; i++) {
-      await this.promisifyRequest(store.delete(oldProfiles[i].id));
+    const cursor = await this.promisifyRequest(index.openCursor(range));
+    const deletePromises: Promise<any>[] = [];
+    
+    if (cursor) {
+      cursor.continue();
+      deletePromises.push(this.promisifyRequest(cursor.delete()));
     }
+    
+    await Promise.all(deletePromises);
   }
 
   /**
    * Get storage usage statistics
    */
-  async getStorageStats(): Promise<{
-    totalSessions: number;
-    totalLogEntries: number;
-    totalFlags: number;
-    totalProfiles: number;
-    estimatedSize: number;
-  }> {
-    if (!this.db) throw new Error('Database not initialized');
+  async getStorageStats(): Promise<{ used: number; available: number; estimatedSize: number }> {
+    if (!navigator.storage || !navigator.storage.estimate) {
+      return { used: 0, available: 0, estimatedSize: 0 };
+    }
 
-    const [sessions, logEntries, flags, profiles] = await Promise.all([
-      this.performTransaction('sessions', 'readonly', store => store.count()),
-      this.performTransaction('logEntries', 'readonly', store => store.count()),
-      this.performTransaction('flags', 'readonly', store => store.count()),
-      this.performTransaction('calibrationProfiles', 'readonly', store => store.count()),
-    ]);
-
-    // Rough estimation of storage size (in bytes)
-    const estimatedSize = (sessions * 1000) + (logEntries * 200) + (flags * 500) + (profiles * 5000);
+    const estimate = await navigator.storage.estimate();
+    const used = estimate.usage || 0;
+    const available = estimate.quota || 0;
+    const estimatedSize = used;
 
     return {
-      totalSessions: sessions,
-      totalLogEntries: logEntries,
-      totalFlags: flags,
-      totalProfiles: profiles,
+      used,
+      available,
       estimatedSize,
     };
   }
@@ -410,35 +320,16 @@ export class LocalStorage {
   /**
    * Decompress data
    */
-  private async decompressData(compressedData: string): Promise<any> {
-    if (!this.config.compressionEnabled) return compressedData;
+  private async decompressData(data: string): Promise<any> {
+    if (!this.config.compressionEnabled) return data;
     
     try {
-      const decompressed = await this.gzipDecompress(compressedData);
+      const decompressed = await this.gzipDecompress(data);
       return JSON.parse(decompressed);
     } catch (error) {
       console.warn('Decompression failed, returning as-is:', error);
-      return compressedData;
+      return data;
     }
-  }
-
-  /**
-   * Compress log entry batch
-   */
-  private async compressLogBatch(entries: LogEntry[]): Promise<LogEntry[]> {
-    if (!this.config.compressionEnabled) return entries;
-    
-    // For log entries, we can compress the entire batch as JSON
-    // and store it as a single compressed entry, then expand on retrieval
-    return entries; // Simplified for now - could implement batch compression
-  }
-
-  /**
-   * Decompress log entry batch
-   */
-  private async decompressLogBatch(entries: LogEntry[]): Promise<LogEntry[]> {
-    if (!this.config.compressionEnabled) return entries;
-    return entries; // Simplified for now
   }
 
   /**
@@ -501,29 +392,6 @@ export class LocalStorage {
     }
     
     return new TextDecoder().decode(decompressed);
-  }
-
-  /**
-   * Helper to perform a transaction and return a promise
-   */
-  private async performTransaction<T>(
-    storeName: string,
-    mode: IDBTransactionMode,
-    operation: (store: IDBObjectStore) => T | Promise<T>
-  ): Promise<T> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const transaction = this.db.transaction([storeName], mode);
-    const store = transaction.objectStore(storeName);
-    
-    try {
-      const result = await operation(store);
-      await this.promisifyTransaction(transaction);
-      return result;
-    } catch (error) {
-      transaction.abort();
-      throw error;
-    }
   }
 
   /**

@@ -118,11 +118,19 @@ export const useAccessibility = (options: UseAccessibilityOptions = {}) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [enableKeyboardShortcuts, handleArrowNavigation, handleHomeEndNavigation]);
 
+  // Set focus to specific element
+  const setFocus = useCallback((element: HTMLElement) => {
+    if (manageFocus) {
+      element.focus();
+    }
+  }, [manageFocus]);
+
   return {
     containerRef,
     pushFocus,
     popFocus,
     focusFirstElement,
+    setFocus,
     announce,
     announceQuizEvent,
     announceAlert,
