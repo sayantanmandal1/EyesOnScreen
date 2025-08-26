@@ -181,8 +181,9 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
       )}
     </div>
   );
-};int
-erface HeadDirectionIndicatorProps {
+};
+
+interface HeadDirectionIndicatorProps {
   direction: string;
 }
 

@@ -52,7 +52,7 @@ export class EnvironmentCalibrator {
   measureShadowStability(frames: ImageData[]): number {
     if (frames.length < 2) return 1.0; // Perfect stability with single frame
 
-    let totalVariance = 0;
+    const totalVariance = 0;
     const shadowScores: number[] = [];
 
     // Calculate shadow score for each frame

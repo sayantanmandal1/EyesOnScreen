@@ -204,7 +204,7 @@ export class ProctorEngine {
       // Face detection
       const faceResults = await this.faceDetector.detectFace(imageData);
       
-      let signals: VisionSignals = {
+      const signals: VisionSignals = {
         timestamp,
         faceDetected: faceResults.detected,
         landmarks: faceResults.landmarks || new Float32Array(),

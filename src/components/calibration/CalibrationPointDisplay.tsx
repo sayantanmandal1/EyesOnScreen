@@ -209,13 +209,13 @@ export const CalibrationPointDisplay: React.FC<CalibrationPointDisplayProps> = (
       )}
 
       {/* Retry option for failed points */}
-      {allowRetry && currentPoint && currentPoint.attempts && currentPoint.attempts > 0 && (
+      {allowRetry && currentPoint && !currentPoint.completed && (
         <div className="absolute top-4 right-4 bg-yellow-600 rounded-lg p-3">
           <div className="text-white text-sm">
             Retrying point {currentPointIndex + 1}
           </div>
           <div className="text-yellow-100 text-xs">
-            Attempt {(currentPoint.attempts || 0) + 1}
+            Calibrating...
           </div>
         </div>
       )}

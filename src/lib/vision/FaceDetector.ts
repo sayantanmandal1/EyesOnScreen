@@ -106,7 +106,7 @@ export class FaceDetector {
    */
   private onResults(results: Results): void {
     const timestamp = Date.now();
-    let landmarks = new Float32Array(468 * 3);
+    const landmarks = new Float32Array(468 * 3);
     let faceDetected = false;
     let confidence = 0;
 

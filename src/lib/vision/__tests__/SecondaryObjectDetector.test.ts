@@ -274,7 +274,7 @@ describe('SecondaryObjectDetector', () => {
       const testDetector = new SecondaryObjectDetector(config);
       
       // First frame
-      let result = testDetector.detectObjects(mockVideo as any);
+      const result = testDetector.detectObjects(mockVideo as any);
       const detectedDevices = result.deviceLikeObjects.filter(d => d.detected);
       expect(detectedDevices.length).toBe(0);
       
