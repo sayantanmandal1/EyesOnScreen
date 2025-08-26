@@ -5,12 +5,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 
-interface PrivacySettingsPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export const PrivacySettingsPanel: React.FC<PrivacySettingsPanelProps> = ({
+export const PrivacySettingsPanel = ({
   isOpen,
   onClose,
 }) => {

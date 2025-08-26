@@ -2,16 +2,16 @@
  * Tests for ConsentModal component
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ConsentModal } from '../ConsentModal.jsx';
-import { useAppStore } from '../../../store/appStore.js';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { ConsentModal } from "../ConsentModal.jsx";
+import { useAppStore } from "../../../store/appStore.js";
 
 // Mock the store
-jest.mock('../../../store/appStore');
+jest.mock("../../../store/appStore");
 const mockUseAppStore = useAppStore;
 
-describe('ConsentModal', () => {
+describe("ConsentModal", () => {
   const mockOnAccept = jest.fn();
   const mockOnDecline = jest.fn();
   const mockUpdatePrivacySettings = jest.fn();
@@ -31,7 +31,7 @@ describe('ConsentModal', () => {
     mockUseAppStore.mockReturnValue(defaultStoreState);
   });
 
-  it('renders when open', () => {
+  it("renders when open", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -40,12 +40,16 @@ describe('ConsentModal', () => {
       />
     );
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Eyes-On-Screen Proctored Quiz')).toBeInTheDocument();
-    expect(screen.getByText('Informed Consent and Privacy Agreement')).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getByText("Eyes-On-Screen Proctored Quiz")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Informed Consent and Privacy Agreement")
+    ).toBeInTheDocument();
   });
 
-  it('does not render when closed', () => {
+  it("does not render when closed", () => {
     render(
       <ConsentModal
         isOpen={false}
@@ -54,10 +58,10 @@ describe('ConsentModal', () => {
       />
     );
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it('displays all required sections', () => {
+  it("displays all required sections", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -66,13 +70,15 @@ describe('ConsentModal', () => {
       />
     );
 
-    expect(screen.getByText('Privacy and Data Processing')).toBeInTheDocument();
-    expect(screen.getByText('Data Usage and Retention')).toBeInTheDocument();
-    expect(screen.getByText('Camera and Monitoring Requirements')).toBeInTheDocument();
-    expect(screen.getByText('Privacy Settings')).toBeInTheDocument();
+    expect(screen.getByText("Privacy and Data Processing")).toBeInTheDocument();
+    expect(screen.getByText("Data Usage and Retention")).toBeInTheDocument();
+    expect(
+      screen.getByText("Camera and Monitoring Requirements")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Privacy Settings")).toBeInTheDocument();
   });
 
-  it('disables accept button until all sections are acknowledged', () => {
+  it("disables accept button until all sections are acknowledged", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -81,23 +87,27 @@ describe('ConsentModal', () => {
       />
     );
 
-    const acceptButton = screen.getByText('I Consent - Begin Quiz');
+    const acceptButton = screen.getByText("I Consent - Begin Quiz");
     expect(acceptButton).toBeDisabled();
 
     // Check first acknowledgment
-    const privacyCheckbox = screen.getByLabelText(/I have read and understand the privacy and data processing information/);
+    const privacyCheckbox = screen.getByLabelText(
+      /I have read and understand the privacy and data processing information/
+    );
     fireEvent.click(privacyCheckbox);
 
     expect(acceptButton).toBeDisabled(); // Still disabled
 
     // Check second acknowledgment
-    const dataUsageCheckbox = screen.getByLabelText(/I have read and understand the data usage and retention policies/);
+    const dataUsageCheckbox = screen.getByLabelText(
+      /I have read and understand the data usage and retention policies/
+    );
     fireEvent.click(dataUsageCheckbox);
 
     expect(acceptButton).not.toBeDisabled(); // Now enabled
   });
 
-  it('calls onAccept when accept button is clicked and all requirements met', async () => {
+  it("calls onAccept when accept button is clicked and all requirements met", async () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -107,13 +117,17 @@ describe('ConsentModal', () => {
     );
 
     // Acknowledge both sections
-    const privacyCheckbox = screen.getByLabelText(/I have read and understand the privacy and data processing information/);
-    const dataUsageCheckbox = screen.getByLabelText(/I have read and understand the data usage and retention policies/);
-    
+    const privacyCheckbox = screen.getByLabelText(
+      /I have read and understand the privacy and data processing information/
+    );
+    const dataUsageCheckbox = screen.getByLabelText(
+      /I have read and understand the data usage and retention policies/
+    );
+
     fireEvent.click(privacyCheckbox);
     fireEvent.click(dataUsageCheckbox);
 
-    const acceptButton = screen.getByText('I Consent - Begin Quiz');
+    const acceptButton = screen.getByText("I Consent - Begin Quiz");
     fireEvent.click(acceptButton);
 
     await waitFor(() => {
@@ -121,7 +135,7 @@ describe('ConsentModal', () => {
     });
   });
 
-  it('calls onDecline when decline button is clicked', () => {
+  it("calls onDecline when decline button is clicked", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -130,13 +144,13 @@ describe('ConsentModal', () => {
       />
     );
 
-    const declineButton = screen.getByText('Decline and Exit');
+    const declineButton = screen.getByText("Decline and Exit");
     fireEvent.click(declineButton);
 
     expect(mockOnDecline).toHaveBeenCalledTimes(1);
   });
 
-  it('updates privacy settings when toggles are changed', () => {
+  it("updates privacy settings when toggles are changed", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -167,7 +181,7 @@ describe('ConsentModal', () => {
     });
   });
 
-  it('displays current privacy settings correctly', () => {
+  it("displays current privacy settings correctly", () => {
     const customStoreState = {
       ...defaultStoreState,
       privacySettings: {
@@ -197,7 +211,7 @@ describe('ConsentModal', () => {
     expect(serverSyncToggle.checked).toBe(true);
   });
 
-  it('has proper accessibility attributes', () => {
+  it("has proper accessibility attributes", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -206,15 +220,18 @@ describe('ConsentModal', () => {
       />
     );
 
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(dialog).toHaveAttribute('aria-labelledby', 'consent-title');
-    expect(dialog).toHaveAttribute('aria-describedby', 'consent-description');
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAttribute("aria-labelledby", "consent-title");
+    expect(dialog).toHaveAttribute("aria-describedby", "consent-description");
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveAttribute('id', 'consent-title');
+    expect(screen.getByRole("heading", { level: 1 })).toHaveAttribute(
+      "id",
+      "consent-title"
+    );
   });
 
-  it('shows requirement message when accept button is disabled', () => {
+  it("shows requirement message when accept button is disabled", () => {
     render(
       <ConsentModal
         isOpen={true}
@@ -223,15 +240,27 @@ describe('ConsentModal', () => {
       />
     );
 
-    expect(screen.getByText('Please read and acknowledge all sections above to continue')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Please read and acknowledge all sections above to continue"
+      )
+    ).toBeInTheDocument();
 
     // Acknowledge both sections
-    const privacyCheckbox = screen.getByLabelText(/I have read and understand the privacy and data processing information/);
-    const dataUsageCheckbox = screen.getByLabelText(/I have read and understand the data usage and retention policies/);
-    
+    const privacyCheckbox = screen.getByLabelText(
+      /I have read and understand the privacy and data processing information/
+    );
+    const dataUsageCheckbox = screen.getByLabelText(
+      /I have read and understand the data usage and retention policies/
+    );
+
     fireEvent.click(privacyCheckbox);
     fireEvent.click(dataUsageCheckbox);
 
-    expect(screen.queryByText('Please read and acknowledge all sections above to continue')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Please read and acknowledge all sections above to continue"
+      )
+    ).not.toBeInTheDocument();
   });
 });

@@ -5,23 +5,17 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 
-interface DataUsageExplanationProps {
-  isOpen: boolean;
-  onClose: () => void;
-  showOptInControls?: boolean;
-}
-
-export const DataUsageExplanation: React.FC<DataUsageExplanationProps> = ({
+export const DataUsageExplanation = ({
   isOpen,
   onClose,
   showOptInControls = true,
 }) => {
   const { privacySettings, updatePrivacySettings } = useAppStore();
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState(null);
 
   if (!isOpen) return null;
 
-  const toggleSection = (section: string) => {
+  const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 

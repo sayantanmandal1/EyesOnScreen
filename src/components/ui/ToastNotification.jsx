@@ -2,12 +2,12 @@
  * ToastNotification - Soft alert toast notification component with accessibility
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from "react";
 
 export const ToastNotification = ({
   alert,
   onDismiss,
-  position = 'top-right',
+  position = "top-right",
   duration = 3000,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -20,12 +20,13 @@ export const ToastNotification = ({
   useEffect(() => {
     // Animate in
     const timer = setTimeout(() => setIsVisible(true), 10);
-    
+
     // Announce to screen readers
     const announcement = `Notification: ${alert.message}`;
-    const liveRegion = document.getElementById('toast-announcements') || createLiveRegion();
+    const liveRegion =
+      document.getElementById("toast-announcements") || createLiveRegion();
     liveRegion.textContent = announcement;
-    
+
     return () => clearTimeout(timer);
   }, [alert.message]);
 
@@ -50,12 +51,12 @@ export const ToastNotification = ({
       if (!toastRef.current?.contains(document.activeElement)) return;
 
       switch (event.key) {
-        case 'Escape':
+        case "Escape":
           event.preventDefault();
           handleDismiss();
           break;
-        case 'Enter':
-        case ' ':
+        case "Enter":
+        case " ":
           if (document.activeElement === dismissButtonRef.current) {
             event.preventDefault();
             handleDismiss();
@@ -64,19 +65,19 @@ export const ToastNotification = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const createLiveRegion = () => {
-    const existing = document.getElementById('toast-announcements');
+    const existing = document.getElementById("toast-announcements");
     if (existing) return existing;
 
-    const liveRegion = document.createElement('div');
-    liveRegion.id = 'toast-announcements';
-    liveRegion.className = 'sr-only';
-    liveRegion.setAttribute('aria-live', 'polite');
-    liveRegion.setAttribute('aria-atomic', 'true');
+    const liveRegion = document.createElement("div");
+    liveRegion.id = "toast-announcements";
+    liveRegion.className = "sr-only";
+    liveRegion.setAttribute("aria-live", "polite");
+    liveRegion.setAttribute("aria-atomic", "true");
     document.body.appendChild(liveRegion);
     return liveRegion;
   };
@@ -90,10 +91,10 @@ export const ToastNotification = ({
 
   const getPositionClasses = () => {
     const positions = {
-      'top-right': 'top-4 right-4',
-      'top-left': 'top-4 left-4',
-      'bottom-right': 'bottom-4 right-4',
-      'bottom-left': 'bottom-4 left-4',
+      "top-right": "top-4 right-4",
+      "top-left": "top-4 left-4",
+      "bottom-right": "bottom-4 right-4",
+      "bottom-left": "bottom-4 left-4",
     };
     return positions[position];
   };
@@ -101,18 +102,18 @@ export const ToastNotification = ({
   const getAlertIcon = () => {
     if (alert.flagEvent) {
       const icons = {
-        EYES_OFF: '👀',
-        HEAD_POSE: '🔄',
-        TAB_BLUR: '🔄',
-        SECOND_FACE: '👥',
-        DEVICE_OBJECT: '📱',
-        SHADOW_ANOMALY: '💡',
-        FACE_MISSING: '❓',
-        DOWN_GLANCE: '👇',
+        EYES_OFF: "👀",
+        HEAD_POSE: "🔄",
+        TAB_BLUR: "🔄",
+        SECOND_FACE: "👥",
+        DEVICE_OBJECT: "📱",
+        SHADOW_ANOMALY: "💡",
+        FACE_MISSING: "❓",
+        DOWN_GLANCE: "👇",
       };
-      return icons[alert.flagEvent.type] || '⚠️';
+      return icons[alert.flagEvent.type] || "⚠️";
     }
-    return '⚠️';
+    return "⚠️";
   };
 
   return (
@@ -120,11 +121,12 @@ export const ToastNotification = ({
       className={`
         fixed z-50 ${getPositionClasses()}
         transform transition-all duration-300 ease-in-out
-        ${isVisible && !isExiting 
-          ? 'translate-x-0 opacity-100 scale-100' 
-          : position.includes('right')
-            ? 'translate-x-full opacity-0 scale-95'
-            : '-translate-x-full opacity-0 scale-95'
+        ${
+          isVisible && !isExiting
+            ? "translate-x-0 opacity-100 scale-100"
+            : position.includes("right")
+            ? "translate-x-full opacity-0 scale-95"
+            : "-translate-x-full opacity-0 scale-95"
         }
       `}
       role="alert"
@@ -141,9 +143,7 @@ export const ToastNotification = ({
             <p className="text-sm font-medium text-yellow-800">
               Proctoring Alert
             </p>
-            <p className="text-sm text-yellow-700 mt-1">
-              {alert.message}
-            </p>
+            <p className="text-sm text-yellow-700 mt-1">{alert.message}</p>
           </div>
           <div className="ml-4 flex-shrink-0">
             <button
@@ -161,11 +161,11 @@ export const ToastNotification = ({
             </button>
           </div>
         </div>
-        
+
         {/* Progress bar for remaining time */}
         <div className="mt-2">
           <div className="w-full bg-yellow-200 rounded-full h-1">
-            <div 
+            <div
               className="bg-yellow-400 h-1 rounded-full transition-all duration-100 ease-linear"
               style={{
                 animation: `shrink ${duration}ms linear`,
@@ -174,11 +174,15 @@ export const ToastNotification = ({
           </div>
         </div>
       </div>
-      
+
       <style jsx>{`
         @keyframes shrink {
-          from { width: 100%; }
-          to { width: 0%; }
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
         }
       `}</style>
     </div>

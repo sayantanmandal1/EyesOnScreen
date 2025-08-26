@@ -29,7 +29,7 @@ describe('QuizResultsInterface', () => {
   const mockOnRetakeQuiz = jest.fn();
   const mockOnClose = jest.fn();
 
-  const mockSession: QuizSession = {
+  const mockSession = {
     id: 'test-session-123',
     questions: [
       {
@@ -59,7 +59,7 @@ describe('QuizResultsInterface', () => {
     status: 'completed'
   };
 
-  const mockFlags: FlagEvent[] = [
+  const mockFlags = [
     {
       id: 'flag-1',
       timestamp: Date.now() - 200000,
@@ -143,7 +143,7 @@ describe('QuizResultsInterface', () => {
   });
 
   it('displays under review status message', () => {
-    const underReviewSession = { ...mockSession, status: 'under-review' as const };
+    const underReviewSession = { ...mockSession, status: 'under-review' };
     
     render(
       <QuizResultsInterface

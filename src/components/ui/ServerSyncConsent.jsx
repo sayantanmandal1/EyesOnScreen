@@ -6,13 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ServerSync } from '../../lib/data/ServerSync';
 
-interface ServerSyncConsentProps {
-  serverSync: ServerSync;
-  onConsentChange: (consent: boolean) => void;
-  className?: string;
-}
-
-export const ServerSyncConsent: React.FC<ServerSyncConsentProps> = ({
+export const ServerSyncConsent = ({
   serverSync,
   onConsentChange,
   className = '',
@@ -29,7 +23,7 @@ export const ServerSyncConsent: React.FC<ServerSyncConsentProps> = ({
     return () => clearInterval(interval);
   }, [serverSync]);
 
-  const handleConsentToggle = async (enabled: boolean) => {
+  const handleConsentToggle = async (enabled) => {
     updatePrivacySettings({ serverSyncEnabled: enabled });
     
     if (enabled) {

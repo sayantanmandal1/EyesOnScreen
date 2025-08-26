@@ -6,53 +6,53 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MonitoringStatusDisplay } from '../MonitoringStatusDisplay';
 import { useAppStore } from '../../../store/appStore';
-import { VisionSignals } from '../../../lib/vision/types';
 
 // Mock the store
 jest.mock('../../../store/appStore');
 const mockUseAppStore = useAppStore;
 
+/** @type {import('../../../lib/vision/types').VisionSignals} */
+const mockVisionSignals = {
+  timestamp: Date.now(),
+  faceDetected: true,
+  landmarks: new Float32Array(468 * 3),
+  headPose: {
+    yaw: 5,
+    pitch: -2,
+    roll: 1,
+    confidence: 0.9
+  },
+  gazeVector: {
+    x: 0.1,
+    y: -0.05,
+    z: 1.0,
+    confidence: 0.85
+  },
+  eyesOnScreen: true,
+  environmentScore: {
+    lighting: 0.8,
+    shadowStability: 0.9,
+    secondaryFaces: 0,
+    deviceLikeObjects: 0
+  }
+};
+
+const defaultStoreState = {
+  currentSignals: mockVisionSignals,
+  monitoring: {
+    isActive: true,
+    performanceMetrics: {
+      fps: 30,
+      latency: 25,
+      memoryUsage: 150
+    }
+  },
+  privacySettings: {
+    videoPreviewEnabled: true
+  }
+};
+
 describe('MonitoringStatusDisplay', () => {
-  const mockVisionSignals: VisionSignals = {
-    timestamp: Date.now(),
-    faceDetected: true,
-    landmarks: new Float32Array(468 * 3),
-    headPose: {
-      yaw: 5,
-      pitch: -2,
-      roll: 1,
-      confidence: 0.9
-    },
-    gazeVector: {
-      x: 0.1,
-      y: -0.05,
-      z: 1.0,
-      confidence: 0.85
-    },
-    eyesOnScreen: true,
-    environmentScore: {
-      lighting: 0.8,
-      shadowStability: 0.9,
-      secondaryFaces: 0,
-      deviceLikeObjects: 0
-    }
-  };
-
-  const defaultStoreState = {
-    currentSignals: mockVisionSignals,
-    monitoring: {
-      isActive: true,
-      performanceMetrics: {
-        fps: 30,
-        latency: 25,
-        memoryUsage: 150
-      }
-    },
-    privacySettings: {
-      videoPreviewEnabled: true
-    }
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppStore.mockReturnValue(defaultStoreState);
@@ -126,7 +126,7 @@ describe('MonitoringStatusDisplay', () => {
         ...defaultStoreState.monitoring,
         isActive: false
       }
-    } as any);
+    });
 
     render(<MonitoringStatusDisplay />);
 
@@ -142,7 +142,7 @@ describe('MonitoringStatusDisplay', () => {
     mockUseAppStore.mockReturnValue({
       ...defaultStoreState,
       currentSignals: oldSignals
-    } as any);
+    });
 
     render(<MonitoringStatusDisplay />);
 
@@ -153,7 +153,7 @@ describe('MonitoringStatusDisplay', () => {
     mockUseAppStore.mockReturnValue({
       ...defaultStoreState,
       currentSignals: null
-    } as any);
+    });
 
     render(<MonitoringStatusDisplay />);
 
@@ -166,7 +166,7 @@ describe('MonitoringStatusDisplay', () => {
       ...mockVisionSignals,
       eyesOnScreen: false,
       gazeVector: {
-        ...mockVisionSignals.gazeVector!,
+        ...mockVisionSignals.gazeVector,
         confidence: 0.3
       }
     };
@@ -174,7 +174,7 @@ describe('MonitoringStatusDisplay', () => {
     mockUseAppStore.mockReturnValue({
       ...defaultStoreState,
       currentSignals: offScreenSignals
-    } as any);
+    });
 
     render(<MonitoringStatusDisplay />);
 
@@ -196,7 +196,7 @@ describe('MonitoringStatusDisplay', () => {
     mockUseAppStore.mockReturnValue({
       ...defaultStoreState,
       currentSignals: poorHeadPoseSignals
-    } as any);
+    });
 
     render(<MonitoringStatusDisplay />);
 

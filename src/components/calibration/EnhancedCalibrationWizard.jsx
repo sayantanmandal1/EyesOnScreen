@@ -4,20 +4,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { CalibrationStep, CalibrationPoint, CalibrationSession } from '../../lib/calibration/types';
 import { CalibrationDots } from './CalibrationDots';
 import { HeadMovementGuide } from './HeadMovementGuide';
 import { EnvironmentCheck } from './EnvironmentCheck';
 import { CalibrationProgress } from './CalibrationProgress';
 import { CalibrationQualityFeedback } from './CalibrationQualityFeedback';
 
-interface EnhancedCalibrationWizardProps {
-  onComplete: (success: boolean) => void;
-  onCancel: () => void;
-  showDetailedInstructions?: boolean;
-}
-
-export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps> = ({
+export const EnhancedCalibrationWizard = ({
   onComplete,
   onCancel,
   showDetailedInstructions = true
@@ -32,7 +25,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
-  const [stepStartTime, setStepStartTime] = useState<number>(0);
+  const [stepStartTime, setStepStartTime] = useState(0);
   const [showInstructions, setShowInstructions] = useState(true);
   const [calibrationAttempts, setCalibrationAttempts] = useState(1);
 
@@ -50,7 +43,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
   }, [currentStep, showDetailedInstructions]);
 
   const initializeCalibration = useCallback(() => {
-    const steps: CalibrationStep[] = [
+    const steps = [
       {
         id: 'setup-check',
         name: 'Setup Verification',
@@ -133,15 +126,15 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
       steps,
       currentStepIndex: 0,
       overallQuality: 0,
-      status: 'in-progress' as const,
+      status: 'in-progress',
       attemptNumber: calibrationAttempts
     };
 
     setCalibrationSession(session);
   }, [setCalibrationSession, calibrationAttempts]);
 
-  const generateCalibrationPoints = (): CalibrationPoint[] => {
-    const points: CalibrationPoint[] = [];
+  const generateCalibrationPoints = () => {
+    const points = [];
     // Enhanced 9-point calibration with better coverage
     const positions = [
       { x: 0.15, y: 0.15 }, // Top-left (moved slightly inward)
@@ -169,7 +162,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     return points;
   };
 
-  const handleStepComplete = useCallback(async (stepData: { points?: CalibrationPoint[]; quality?: number }) => {
+  const handleStepComplete = useCallback(async (stepData) => {
     if (!calibrationSession) return;
 
     setIsProcessing(true);
@@ -207,7 +200,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     }
   }, [calibrationSession, currentStep, stepStartTime, setCalibrationSession]);
 
-  const finalizeCalibration = async (session: CalibrationSession) => {
+  const finalizeCalibration = async (session) => {
     // Calculate overall quality with enhanced metrics
     const quality = calculateOverallQuality(session);
     
@@ -221,7 +214,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
         endTime: Date.now(),
         overallQuality: quality,
         profile,
-        status: 'completed' as const
+        status: 'completed'
       };
       
       setCalibrationSession(finalSession);
@@ -231,12 +224,12 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     }
   };
 
-  const calculateOverallQuality = (session: CalibrationSession): number => {
+  const calculateOverallQuality = (session) => {
     // Enhanced quality calculation based on multiple factors
     let totalQuality = 0;
     let qualityFactors = 0;
 
-    session.steps.forEach((step: CalibrationStep) => {
+    session.steps.forEach((step) => {
       if (step.completed && step.data) {
         switch (step.id) {
           case 'gaze-calibration':
@@ -270,11 +263,11 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     return qualityFactors > 0 ? totalQuality / qualityFactors : 0.5;
   };
 
-  const createCalibrationProfile = async (session: CalibrationSession) => {
+  const createCalibrationProfile = async (session) => {
     // Enhanced profile creation with real data from calibration
-    const gazeData = session.steps.find((s: CalibrationStep) => s.id === 'gaze-calibration')?.data;
-    const headPoseData = session.steps.find((s: CalibrationStep) => s.id === 'head-pose-calibration')?.data;
-    const envData = session.steps.find((s: CalibrationStep) => s.id === 'environment-baseline')?.data;
+    const gazeData = session.steps.find((s) => s.id === 'gaze-calibration')?.data;
+    const headPoseData = session.steps.find((s) => s.id === 'head-pose-calibration')?.data;
+    const envData = session.steps.find((s) => s.id === 'environment-baseline')?.data;
 
     return {
       id: `profile-${Date.now()}`,
@@ -286,8 +279,8 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
         bias: gazeData?.calibrationBias || [0, 0]
       },
       headPoseBounds: {
-        yawRange: headPoseData?.yawRange || [-20, 20] as [number, number],
-        pitchRange: headPoseData?.pitchRange || [-15, 15] as [number, number]
+        yawRange: headPoseData?.yawRange || [-20, 20],
+        pitchRange: headPoseData?.pitchRange || [-15, 15]
       },
       lightingBaseline: {
         histogram: envData?.lightingHistogram || new Array(256).fill(0),

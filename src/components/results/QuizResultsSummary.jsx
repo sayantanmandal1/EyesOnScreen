@@ -3,27 +3,17 @@
  */
 
 import React, { useState } from 'react';
-import { QuizSession } from '../../lib/quiz/types';
-import { FlagEvent } from '../../lib/proctoring/types';
 
-interface QuizResultsSummaryProps {
-  session: QuizSession;
-  flags: FlagEvent[];
-  riskScore: number;
-  className?: string;
-  showDetailedBreakdown?: boolean;
-}
-
-export const QuizResultsSummary: React.FC<QuizResultsSummaryProps> = ({
+export const QuizResultsSummary = ({
   session,
   flags,
   riskScore,
   className = '',
   showDetailedBreakdown = true
 }) => {
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState(null);
 
-  const toggleSection = (section: string) => {
+  const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
@@ -41,7 +31,7 @@ export const QuizResultsSummary: React.FC<QuizResultsSummaryProps> = ({
   const scorePercentage = (correctAnswers / totalQuestions) * 100;
 
   // Risk assessment
-  const getRiskLevel = (score: number) => {
+  const getRiskLevel = (score) => {
     if (score >= 70) return { level: 'High', color: 'text-red-600 bg-red-50 border-red-200' };
     if (score >= 40) return { level: 'Medium', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' };
     if (score >= 20) return { level: 'Low', color: 'text-blue-600 bg-blue-50 border-blue-200' };
@@ -54,7 +44,7 @@ export const QuizResultsSummary: React.FC<QuizResultsSummaryProps> = ({
   const flagsByType = flags.reduce((acc, flag) => {
     acc[flag.type] = (acc[flag.type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   const flagCategories = [
     { type: 'EYES_OFF', label: 'Eyes Off Screen', icon: '👀' },

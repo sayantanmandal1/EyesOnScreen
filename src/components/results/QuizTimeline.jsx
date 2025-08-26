@@ -3,37 +3,19 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { QuizSession } from '../../lib/quiz/types';
-import { FlagEvent } from '../../lib/proctoring/types';
 
-interface QuizTimelineProps {
-  session: QuizSession;
-  flags: FlagEvent[];
-  className?: string;
-  showConfidenceData?: boolean;
-}
-
-interface TimelineEvent {
-  timestamp: number;
-  type: 'question-start' | 'question-end' | 'answer-change' | 'flag';
-  questionId?: string;
-  questionIndex?: number;
-  flagData?: FlagEvent;
-  data?: any;
-}
-
-export const QuizTimeline: React.FC<QuizTimelineProps> = ({
+export const QuizTimeline = ({
   session,
   flags,
   className = '',
   showConfidenceData = false
 }) => {
-  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
 
   // Generate timeline events
   const timelineEvents = useMemo(() => {
-    const events: TimelineEvent[] = [];
+    const events = [];
     
     // Add question events
     session.questions.forEach((question, index) => {
@@ -80,12 +62,12 @@ export const QuizTimeline: React.FC<QuizTimelineProps> = ({
   const totalDuration = session.endTime ? session.endTime - session.startTime : Date.now() - session.startTime;
   const timelineWidth = Math.max(800, totalDuration / 1000 * zoomLevel); // 1px per second at zoom level 1
 
-  const getEventPosition = (timestamp: number) => {
+  const getEventPosition = (timestamp) => {
     const relativeTime = timestamp - session.startTime;
     return (relativeTime / totalDuration) * timelineWidth;
   };
 
-  const getEventColor = (event: TimelineEvent) => {
+  const getEventColor = (event) => {
     switch (event.type) {
       case 'question-start':
         return 'bg-blue-500';
@@ -100,7 +82,7 @@ export const QuizTimeline: React.FC<QuizTimelineProps> = ({
     }
   };
 
-  const getEventIcon = (event: TimelineEvent) => {
+  const getEventIcon = (event) => {
     switch (event.type) {
       case 'question-start':
         return '▶️';
@@ -115,14 +97,14 @@ export const QuizTimeline: React.FC<QuizTimelineProps> = ({
     }
   };
 
-  const formatTime = (timestamp: number) => {
+  const formatTime = (timestamp) => {
     const relativeTime = timestamp - session.startTime;
     const minutes = Math.floor(relativeTime / 60000);
     const seconds = Math.floor((relativeTime % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const getQuestionDuration = (questionIndex: number) => {
+  const getQuestionDuration = (questionIndex) => {
     const questionEvents = timelineEvents.filter(e => e.questionIndex === questionIndex);
     const startEvent = questionEvents.find(e => e.type === 'question-start');
     const endEvent = questionEvents.find(e => e.type === 'question-end');

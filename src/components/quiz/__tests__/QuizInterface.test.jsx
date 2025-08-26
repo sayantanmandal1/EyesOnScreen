@@ -6,11 +6,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QuizInterface } from '../QuizInterface';
 import { useAppStore } from '../../../store/appStore';
-import { Question } from '../../../lib/quiz/types';
 
 // Mock the store
 jest.mock('../../../store/appStore');
-const mockUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore>;
+const mockUseAppStore = useAppStore;
 
 // Mock hooks
 jest.mock('../../../hooks/useQuizTimer', () => ({
@@ -34,7 +33,7 @@ jest.mock('../../../hooks/useIntegrityEnforcer', () => ({
 
 // Mock child components
 jest.mock('../QuestionRenderer', () => ({
-  QuestionRenderer: ({ question, onAnswerChange }: any) => (
+  QuestionRenderer: ({ question, onAnswerChange }) => (
     <div data-testid="question-renderer">
       <div>{question.text}</div>
       <input
@@ -59,7 +58,7 @@ jest.mock('../CountdownDisplay', () => ({
 }));
 
 jest.mock('../NavigationControls', () => ({
-  NavigationControls: ({ onNext, onSubmit, isLastQuestion }: any) => (
+  NavigationControls: ({ onNext, onSubmit, isLastQuestion }) => (
     <div data-testid="navigation-controls">
       {!isLastQuestion && (
         <button onClick={onNext} data-testid="next-button">
@@ -73,7 +72,7 @@ jest.mock('../NavigationControls', () => ({
       )}
     </div>
   ),
-  AutoProgressNotification: ({ show }: any) => 
+  AutoProgressNotification: ({ show }) =>
     show ? <div data-testid="auto-progress">Auto Progress</div> : null
 }));
 
@@ -84,7 +83,7 @@ describe('QuizInterface', () => {
   const mockShowAlert = jest.fn();
   const mockHideAlert = jest.fn();
 
-  const mockQuestions: Question[] = [
+  const mockQuestions = [
     {
       id: 'q1',
       type: 'multiple-choice',
@@ -113,7 +112,7 @@ describe('QuizInterface', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAppStore.mockReturnValue(defaultStoreState as any);
+    mockUseAppStore.mockReturnValue(defaultStoreState);
   });
 
   it('renders quiz interface with first question', () => {
@@ -164,7 +163,6 @@ describe('QuizInterface', () => {
     const answerInput = screen.getByTestId('answer-input');
     fireEvent.change(answerInput, { target: { value: '4' } });
 
-    // Answer should be stored internally
     expect(answerInput).toBeInTheDocument();
   });
 
@@ -177,11 +175,9 @@ describe('QuizInterface', () => {
       />
     );
 
-    // Answer first question
     const answerInput = screen.getByTestId('answer-input');
     fireEvent.change(answerInput, { target: { value: '4' } });
 
-    // Click next
     const nextButton = screen.getByTestId('next-button');
     fireEvent.click(nextButton);
 
@@ -199,7 +195,6 @@ describe('QuizInterface', () => {
       />
     );
 
-    // Navigate to last question
     const answerInput = screen.getByTestId('answer-input');
     fireEvent.change(answerInput, { target: { value: '4' } });
 
@@ -220,7 +215,6 @@ describe('QuizInterface', () => {
       />
     );
 
-    // Navigate to last question
     const answerInput = screen.getByTestId('answer-input');
     fireEvent.change(answerInput, { target: { value: '4' } });
 
@@ -291,7 +285,6 @@ describe('QuizInterface', () => {
       />
     );
 
-    // Navigate to last question and submit
     const answerInput = screen.getByTestId('answer-input');
     fireEvent.change(answerInput, { target: { value: '4' } });
 
