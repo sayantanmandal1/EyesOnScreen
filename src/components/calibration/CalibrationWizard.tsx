@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { CalibrationStep, CalibrationPoint } from '../../lib/calibration/types';
+import { CalibrationStep, CalibrationPoint, CalibrationSession } from '../../lib/calibration/types';
 import { CalibrationDots } from './CalibrationDots';
 import { HeadMovementGuide } from './HeadMovementGuide';
 import { EnvironmentCheck } from './EnvironmentCheck';
@@ -117,7 +117,7 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     return points;
   };
 
-  const handleStepComplete = useCallback(async (stepData: any) => {
+  const handleStepComplete = useCallback(async (stepData: { points?: CalibrationPoint[]; quality?: number }) => {
     if (!calibrationSession) return;
 
     setIsProcessing(true);
@@ -151,7 +151,7 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     }
   }, [calibrationSession, currentStep, setCalibrationSession]);
 
-  const finalizeCalibration = async (session: any) => {
+  const finalizeCalibration = async (session: CalibrationSession) => {
     // Calculate overall quality and create calibration profile
     const quality = calculateOverallQuality(session);
     
@@ -175,12 +175,12 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     }
   };
 
-  const calculateOverallQuality = (session: any): number => {
+  const calculateOverallQuality = (session: CalibrationSession): number => {
     // Placeholder implementation - will be enhanced in task 4.2
     return 0.85; // Mock quality score
   };
 
-  const createCalibrationProfile = async (session: any) => {
+  const createCalibrationProfile = async (session: CalibrationSession) => {
     // Placeholder implementation - will be enhanced in task 4.2
     return {
       ipd: 65, // Mock interpupillary distance

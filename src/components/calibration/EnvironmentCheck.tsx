@@ -241,7 +241,7 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
         {/* Instructions */}
         <div className="text-gray-400 text-sm max-w-md">
           Please remain still and maintain good posture. 
-          We're analyzing your environment to ensure optimal monitoring conditions.
+          We&apos;re analyzing your environment to ensure optimal monitoring conditions.
         </div>
       </div>
 

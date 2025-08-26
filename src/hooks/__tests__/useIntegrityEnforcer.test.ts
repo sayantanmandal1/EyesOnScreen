@@ -4,7 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { useIntegrityEnforcer, UseIntegrityEnforcerOptions } from '../useIntegrityEnforcer';
-import { IntegrityConfig } from '../../lib/quiz/IntegrityEnforcer';
+import { IntegrityConfig, IntegrityEnforcer } from '../../lib/quiz/IntegrityEnforcer';
 
 // Mock the IntegrityEnforcer class
 const mockStart = jest.fn();
@@ -137,7 +137,6 @@ describe('useIntegrityEnforcer', () => {
     renderHook(() => useIntegrityEnforcer(options));
 
     // Verify that the IntegrityEnforcer was created with callbacks
-    const { IntegrityEnforcer } = require('../../lib/quiz/IntegrityEnforcer');
     expect(IntegrityEnforcer).toHaveBeenCalledWith(
       defaultConfig,
       expect.objectContaining({
@@ -190,8 +189,7 @@ describe('useIntegrityEnforcer', () => {
     renderHook(() => useIntegrityEnforcer(options));
 
     // Simulate violation callback
-    const { IntegrityEnforcer } = require('../../lib/quiz/IntegrityEnforcer');
-    const mockEnforcerInstance = IntegrityEnforcer.mock.results[0].value;
+    const mockEnforcerInstance = (IntegrityEnforcer as jest.Mock).mock.results[0].value;
     const callbacks = IntegrityEnforcer.mock.calls[0][1];
 
     const testViolation = {

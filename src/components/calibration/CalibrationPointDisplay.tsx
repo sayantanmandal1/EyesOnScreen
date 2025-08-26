@@ -4,11 +4,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CalibrationPoint } from '../../lib/calibration/types';
+import { MediaPipeResults } from '../../types/common';
 
 interface CalibrationPointDisplayProps {
   points: CalibrationPoint[];
   currentPointIndex: number;
-  onPointComplete: (pointIndex: number, data: any) => void;
+  onPointComplete: (pointIndex: number, data: MediaPipeResults) => void;
   showProgress?: boolean;
   allowRetry?: boolean;
   pointDuration?: number;

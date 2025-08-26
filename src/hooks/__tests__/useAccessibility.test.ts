@@ -14,7 +14,7 @@ jest.mock('../../utils/accessibility', () => ({
   })
 }));
 
-const mockUtils = require('../../utils/accessibility');
+import * as mockUtils from '../../utils/accessibility';
 
 describe('useAccessibility', () => {
   beforeEach(() => {

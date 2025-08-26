@@ -70,7 +70,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
         `}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium" id="question-timer-label">Question Time</span>
-            <span 
+            <span
               className={`
                 text-2xl font-bold tabular-nums
                 ${shouldPulse(questionStatus) ? 'animate-pulse' : ''}
@@ -81,10 +81,10 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
               {questionTime}
             </span>
           </div>
-          
+
           {/* Progress bar */}
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className={`
                 h-2 rounded-full transition-all duration-1000 ease-linear
                 ${getProgressColor(questionStatus)}
@@ -97,10 +97,10 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
               aria-label={`Question progress: ${questionProgress}%`}
             />
           </div>
-          
+
           {questionStatus === 'expired' && (
             <div className="mt-2 text-sm font-medium text-red-700">
-              Time's up!
+              Time&apos;s up!
             </div>
           )}
         </div>
@@ -114,7 +114,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
         `}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium" id="total-timer-label">Total Time</span>
-            <span 
+            <span
               className={`
                 text-lg font-semibold tabular-nums
                 ${shouldPulse(totalStatus) ? 'animate-pulse' : ''}
@@ -125,10 +125,10 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
               {totalTime}
             </span>
           </div>
-          
+
           {/* Progress bar */}
           <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div 
+            <div
               className={`
                 h-1.5 rounded-full transition-all duration-1000 ease-linear
                 ${getProgressColor(totalStatus)}
@@ -141,7 +141,7 @@ export const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
               aria-label={`Total quiz progress: ${totalProgress}%`}
             />
           </div>
-          
+
           {totalStatus === 'expired' && (
             <div className="mt-2 text-sm font-medium text-red-700">
               Quiz time expired!

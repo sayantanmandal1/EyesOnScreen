@@ -4,7 +4,7 @@
  * Automated test runner with performance monitoring and reporting
  */
 
-const { execSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 

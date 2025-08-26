@@ -123,8 +123,8 @@ export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
 
         <div className="mt-4 text-xs text-gray-500">
           <p>
-            If you're having trouble with fullscreen mode, try using F11 or check your 
-            browser's fullscreen settings.
+            If you&apos;re having trouble with fullscreen mode, try using F11 or check your 
+            browser&apos;s fullscreen settings.
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@
 
 import { FaceDetector, FaceDetectionResult } from '../FaceDetector';
 import { VisionError } from '../types';
+import { FaceMesh } from '@mediapipe/face_mesh';
 
 // Mock MediaPipe modules
 jest.mock('@mediapipe/face_mesh', () => ({
@@ -38,8 +39,7 @@ describe('FaceDetector', () => {
     };
 
     // Mock FaceMesh constructor
-    const { FaceMesh } = require('@mediapipe/face_mesh');
-    FaceMesh.mockImplementation(() => mockFaceMesh);
+    (FaceMesh as jest.Mock).mockImplementation(() => mockFaceMesh);
 
     faceDetector = new FaceDetector();
   });
@@ -78,8 +78,7 @@ describe('FaceDetector', () => {
     });
 
     it('should throw VisionError on initialization failure', async () => {
-      const { FaceMesh } = require('@mediapipe/face_mesh');
-      FaceMesh.mockImplementation(() => {
+      (FaceMesh as jest.Mock).mockImplementation(() => {
         throw new Error('Model load failed');
       });
 

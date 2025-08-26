@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { CalibrationStep, CalibrationPoint } from '../../lib/calibration/types';
+import { CalibrationStep, CalibrationPoint, CalibrationSession } from '../../lib/calibration/types';
 import { CalibrationDots } from './CalibrationDots';
 import { HeadMovementGuide } from './HeadMovementGuide';
 import { EnvironmentCheck } from './EnvironmentCheck';
@@ -169,7 +169,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     return points;
   };
 
-  const handleStepComplete = useCallback(async (stepData: any) => {
+  const handleStepComplete = useCallback(async (stepData: { points?: CalibrationPoint[]; quality?: number }) => {
     if (!calibrationSession) return;
 
     setIsProcessing(true);
@@ -207,7 +207,7 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     }
   }, [calibrationSession, currentStep, stepStartTime, setCalibrationSession]);
 
-  const finalizeCalibration = async (session: any) => {
+  const finalizeCalibration = async (session: CalibrationSession) => {
     // Calculate overall quality with enhanced metrics
     const quality = calculateOverallQuality(session);
     
@@ -231,12 +231,12 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     }
   };
 
-  const calculateOverallQuality = (session: any): number => {
+  const calculateOverallQuality = (session: CalibrationSession): number => {
     // Enhanced quality calculation based on multiple factors
     let totalQuality = 0;
     let qualityFactors = 0;
 
-    session.steps.forEach((step: any) => {
+    session.steps.forEach((step: CalibrationStep) => {
       if (step.completed && step.data) {
         switch (step.id) {
           case 'gaze-calibration':
@@ -270,11 +270,11 @@ export const EnhancedCalibrationWizard: React.FC<EnhancedCalibrationWizardProps>
     return qualityFactors > 0 ? totalQuality / qualityFactors : 0.5;
   };
 
-  const createCalibrationProfile = async (session: any) => {
+  const createCalibrationProfile = async (session: CalibrationSession) => {
     // Enhanced profile creation with real data from calibration
-    const gazeData = session.steps.find((s: any) => s.id === 'gaze-calibration')?.data;
-    const headPoseData = session.steps.find((s: any) => s.id === 'head-pose-calibration')?.data;
-    const envData = session.steps.find((s: any) => s.id === 'environment-baseline')?.data;
+    const gazeData = session.steps.find((s: CalibrationStep) => s.id === 'gaze-calibration')?.data;
+    const headPoseData = session.steps.find((s: CalibrationStep) => s.id === 'head-pose-calibration')?.data;
+    const envData = session.steps.find((s: CalibrationStep) => s.id === 'environment-baseline')?.data;
 
     return {
       id: `profile-${Date.now()}`,

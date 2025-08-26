@@ -4,10 +4,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CalibrationPoint } from '../../lib/calibration/types';
+import { MediaPipeResults } from '../../types/common';
 
 interface CalibrationDotsProps {
   points: CalibrationPoint[];
-  onComplete: (data: any) => void;
+  onComplete: (data: { points: CalibrationPoint[]; quality: number }) => void;
   isProcessing: boolean;
 }
 
@@ -18,7 +19,7 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
 }) => {
   const [currentPointIndex, setCurrentPointIndex] = useState(0);
   const [isCollecting, setIsCollecting] = useState(false);
-  const [collectedData, setCollectedData] = useState<any[]>([]);
+  const [collectedData, setCollectedData] = useState<MediaPipeResults[]>([]);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(true);
 
@@ -86,7 +87,7 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
     });
   }, [collectedData, onComplete]);
 
-  const calculateCalibrationQuality = (data: any[]): number => {
+  const calculateCalibrationQuality = (data: MediaPipeResults[]): number => {
     // Simple quality calculation based on data consistency
     if (data.length < points.length) return 0;
     

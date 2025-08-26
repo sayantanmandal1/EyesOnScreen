@@ -116,7 +116,7 @@ export const DataUsageExplanation: React.FC<DataUsageExplanationProps> = ({
             </button>
           </div>
           <p className="text-gray-600 mt-2">
-            Understand exactly what data is collected, how it's used, and your privacy controls.
+            Understand exactly what data is collected, how it&apos;s used, and your privacy controls.
           </p>
         </div>
 

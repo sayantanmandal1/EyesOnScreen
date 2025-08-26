@@ -104,7 +104,7 @@ export const ConsentModal: React.FC<ConsentModalProps> = ({
                 such as looking away from the screen, unauthorized assistance, or environmental tampering.
               </p>
               <p>
-                <strong>Storage:</strong> Monitoring data is stored locally in your browser's 
+                <strong>Storage:</strong> Monitoring data is stored locally in your browser&apos;s 
                 secure storage (IndexedDB) and automatically deleted after {privacySettings.dataRetentionDays} days.
               </p>
               <p>
