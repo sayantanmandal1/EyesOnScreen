@@ -4,12 +4,12 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ConsentModal } from '../ConsentModal';
-import { useAppStore } from '../../../store/appStore';
+import { ConsentModal } from '../ConsentModal.jsx';
+import { useAppStore } from '../../../store/appStore.js';
 
 // Mock the store
 jest.mock('../../../store/appStore');
-const mockUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore>;
+const mockUseAppStore = useAppStore;
 
 describe('ConsentModal', () => {
   const mockOnAccept = jest.fn();
@@ -28,7 +28,7 @@ describe('ConsentModal', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAppStore.mockReturnValue(defaultStoreState as any);
+    mockUseAppStore.mockReturnValue(defaultStoreState);
   });
 
   it('renders when open', () => {
@@ -178,7 +178,7 @@ describe('ConsentModal', () => {
       },
     };
 
-    mockUseAppStore.mockReturnValue(customStoreState as any);
+    mockUseAppStore.mockReturnValue(customStoreState);
 
     render(
       <ConsentModal
@@ -188,9 +188,9 @@ describe('ConsentModal', () => {
       />
     );
 
-    const videoPreviewToggle = screen.getByLabelText(/Video Preview/) as HTMLInputElement;
-    const audioAlertsToggle = screen.getByLabelText(/Audio Alerts/) as HTMLInputElement;
-    const serverSyncToggle = screen.getByLabelText(/Server Sync \(Optional\)/) as HTMLInputElement;
+    const videoPreviewToggle = screen.getByLabelText(/Video Preview/);
+    const audioAlertsToggle = screen.getByLabelText(/Audio Alerts/);
+    const serverSyncToggle = screen.getByLabelText(/Server Sync \(Optional\)/);
 
     expect(videoPreviewToggle.checked).toBe(false);
     expect(audioAlertsToggle.checked).toBe(false);

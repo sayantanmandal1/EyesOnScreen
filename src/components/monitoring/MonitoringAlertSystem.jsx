@@ -2,34 +2,19 @@
  * Monitoring-specific alert toast and modal system
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { FlagEvent } from '../../lib/proctoring/types';
 
-interface MonitoringAlertSystemProps {
-  className?: string;
-}
-
-interface AlertDisplay {
-  id: string;
-  type: 'soft' | 'hard';
-  message: string;
-  timestamp: number;
-  flagEvent?: FlagEvent;
-  acknowledged: boolean;
-  autoHideDelay?: number;
-}
-
-export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
+export const MonitoringAlertSystem = ({
   className = ''
 }) => {
-  const { activeFlags, privacySettings, hideAlert } = useAppStore();
-  const [displayedAlerts, setDisplayedAlerts] = useState<AlertDisplay[]>([]);
-  const [hardAlertModal, setHardAlertModal] = useState<AlertDisplay | null>(null);
+  const { activeFlags, privacySettings } = useAppStore();
+  const [displayedAlerts, setDisplayedAlerts] = useState([]);
+  const [hardAlertModal, setHardAlertModal] = useState(null);
 
   // Convert flags to alert displays
   useEffect(() => {
-    const newAlerts: AlertDisplay[] = activeFlags
+    const newAlerts = activeFlags
       .filter(flag => !displayedAlerts.some(alert => alert.id === flag.id))
       .map(flag => ({
         id: flag.id,
@@ -69,7 +54,7 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
       .map(alert => 
         setTimeout(() => {
           handleDismissAlert(alert.id);
-        }, alert.autoHideDelay!)
+        }, alert.autoHideDelay)
       );
 
     return () => {
@@ -77,7 +62,7 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
     };
   }, [displayedAlerts]);
 
-  const getAlertMessage = (flag: FlagEvent): string => {
+  const getAlertMessage = (flag) => {
     switch (flag.type) {
       case 'EYES_OFF':
         return 'Eyes detected looking away from screen';
@@ -100,7 +85,7 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
     }
   };
 
-  const getAlertIcon = (type: string) => {
+  const getAlertIcon = (type) => {
     switch (type) {
       case 'EYES_OFF':
         return '👀';
@@ -123,9 +108,9 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
     }
   };
 
-  const playAlertSound = (type: 'soft' | 'hard') => {
+  const playAlertSound = (type) => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
@@ -154,7 +139,7 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
     }
   };
 
-  const handleDismissAlert = (alertId: string) => {
+  const handleDismissAlert = (alertId) => {
     setDisplayedAlerts(prev => prev.filter(alert => alert.id !== alertId));
   };
 
@@ -315,52 +300,6 @@ export const MonitoringAlertSystem: React.FC<MonitoringAlertSystemProps> = ({
           </div>
         </div>
       )}
-
-      {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes slide-in-right {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes scale-in {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes shrink {
-          from {
-            width: 100%;
-          }
-          to {
-            width: 0%;
-          }
-        }
-        
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
-        }
-        
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out;
-        }
-        
-        .animate-shrink {
-          animation: shrink linear;
-        }
-      `}</style>
     </div>
   );
 };

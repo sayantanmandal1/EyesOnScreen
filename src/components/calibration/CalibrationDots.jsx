@@ -2,24 +2,17 @@
  * CalibrationDots - 9-point calibration dot display system
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { CalibrationPoint } from '../../lib/calibration/types';
-import { MediaPipeResults } from '../../types/common';
+import { useState, useEffect, useCallback } from 'react';
 
-interface CalibrationDotsProps {
-  points: CalibrationPoint[];
-  onComplete: (data: { points: CalibrationPoint[]; quality: number }) => void;
-  isProcessing: boolean;
-}
-
-export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
+export const CalibrationDots = ({
   points,
   onComplete,
-  isProcessing
+  isProcessing,
+  cameraStream
 }) => {
   const [currentPointIndex, setCurrentPointIndex] = useState(0);
   const [isCollecting, setIsCollecting] = useState(false);
-  const [collectedData, setCollectedData] = useState<MediaPipeResults[]>([]);
+  const [collectedData, setCollectedData] = useState([]);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(true);
 
@@ -80,20 +73,42 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
 
   const completeCalibration = useCallback(() => {
     setIsCollecting(false);
+    
+    // Ensure camera is still active
+    if (!cameraStream || !cameraStream.active) {
+      console.warn('Camera stream not active during calibration completion');
+    }
+    
     onComplete({
-      type: 'gaze-calibration',
-      data: collectedData,
+      points: points.map((point, index) => ({
+        ...point,
+        completed: index < collectedData.length
+      })),
       quality: calculateCalibrationQuality(collectedData)
     });
-  }, [collectedData, onComplete]);
+  }, [collectedData, onComplete, cameraStream, points]);
 
-  const calculateCalibrationQuality = (data: MediaPipeResults[]): number => {
+  const calculateCalibrationQuality = (data) => {
     // Simple quality calculation based on data consistency
     if (data.length < points.length) return 0;
     
     const avgConfidence = data.reduce((sum, d) => sum + d.confidence, 0) / data.length;
     return Math.min(avgConfidence, 1.0);
   };
+
+  // Check camera status
+  if (!cameraStream || !cameraStream.active) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-red-400 text-xl mb-4">Camera Not Active</div>
+          <p className="text-gray-300">
+            Camera must be active for gaze calibration
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (showCountdown) {
     return (
@@ -104,6 +119,9 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
           </div>
           <p className="text-gray-300">
             Get ready to look at the calibration points
+          </p>
+          <p className="text-green-400 text-sm mt-2">
+            ✓ Camera Active
           </p>
         </div>
       </div>
@@ -155,19 +173,13 @@ export const CalibrationDots: React.FC<CalibrationDotsProps> = ({
   );
 };
 
-interface CalibrationDotProps {
-  point: CalibrationPoint;
-  isActive: boolean;
-  isCompleted: boolean;
-}
-
-const CalibrationDot: React.FC<CalibrationDotProps> = ({
+const CalibrationDot = ({
   point,
   isActive,
   isCompleted
 }) => {
   const style = {
-    position: 'absolute' as const,
+    position: 'absolute',
     left: `${point.x * 100}%`,
     top: `${point.y * 100}%`,
     transform: 'translate(-50%, -50%)',

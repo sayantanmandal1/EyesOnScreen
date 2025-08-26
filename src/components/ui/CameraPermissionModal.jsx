@@ -5,24 +5,18 @@
 
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { CameraPermissionManager, DEFAULT_CAMERA_CONFIG } from '../../lib/camera';
 import { useAppStore } from '../../store';
 
-interface CameraPermissionModalProps {
-  isOpen: boolean;
-  onPermissionGranted: (stream: MediaStream) => void;
-  onPermissionDenied: () => void;
-}
-
-export const CameraPermissionModal: React.FC<CameraPermissionModalProps> = ({
+export const CameraPermissionModal = ({
   isOpen,
   onPermissionGranted,
   onPermissionDenied,
 }) => {
   const { setCameraPermission, showAlert } = useAppStore();
   const [isRequesting, setIsRequesting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
   const permissionManager = useMemo(() => {

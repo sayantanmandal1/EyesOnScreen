@@ -2,7 +2,7 @@
  * Main quiz interface component that brings together all quiz functionality
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { QuestionRenderer } from './QuestionRenderer';
 import { CountdownDisplay, useCountdownDisplay } from './CountdownDisplay';
@@ -12,28 +12,17 @@ import { IntegrityViolationAlert } from './IntegrityViolationAlert';
 import { useQuizTimer } from '../../hooks/useQuizTimer';
 import { useIntegrityEnforcer } from '../../hooks/useIntegrityEnforcer';
 import { QuizEngine } from '../../lib/quiz/QuizEngine';
-import { Question } from '../../lib/quiz/types';
 
-interface QuizInterfaceProps {
-  questions: Question[];
-  currentQuestionIndex?: number;
-  onAnswerChange?: (questionId: string, answer: string) => void;
-  onNext?: () => void;
-  onComplete: (results: any) => void;
-  onCancel?: () => void;
-  className?: string;
-}
-
-export const QuizInterface: React.FC<QuizInterfaceProps> = ({
+export const QuizInterface = ({
   questions,
   onComplete,
   onCancel,
   className = ''
 }) => {
-  const { session, setSession, showAlert, hideAlert } = useAppStore();
-  const [quizEngine] = useState(() => new QuizEngine(questions));
+  const { session, setSession, showAlert } = useAppStore();
+  const [quizEngine] = useState(() => new QuizEngine({ questions }));
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAutoProgressNotification, setShowAutoProgressNotification] = useState(false);
   const [autoProgressCountdown, setAutoProgressCountdown] = useState(0);
@@ -41,10 +30,16 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
   // Initialize quiz session
   useEffect(() => {
     if (!session) {
-      const newSession = quizEngine.startQuiz();
+      const newSession = {
+        id: Date.now().toString(),
+        startTime: Date.now(),
+        questions: questions,
+        answers: {},
+        flags: []
+      };
       setSession(newSession);
     }
-  }, [session, setSession, quizEngine]);
+  }, [session, setSession, questions]);
 
   // Timer management
   const timerManager = useQuizTimer({
@@ -57,7 +52,6 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
 
   // Integrity enforcement
   const {
-    isFullscreenRequired,
     isFullscreen,
     violations,
     requestFullscreen,
@@ -71,14 +65,14 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
   });
 
   // Countdown display state
-  const countdownState = useCountdownDisplay(timerManager);
+  const countdownState = useCountdownDisplay(timerManager.timerManager);
 
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const currentAnswer = answers[currentQuestion?.id] || '';
 
   // Handle answer changes
-  const handleAnswerChange = useCallback((answer: string) => {
+  const handleAnswerChange = useCallback((answer) => {
     if (!currentQuestion) return;
 
     setAnswers(prev => ({
@@ -87,14 +81,18 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
     }));
 
     // Auto-save to quiz engine
-    quizEngine.submitAnswer(currentQuestion.id, answer);
+    if (quizEngine.submitAnswer) {
+      quizEngine.submitAnswer(currentQuestion.id, answer);
+    }
   }, [currentQuestion, quizEngine]);
 
   // Handle navigation
   const handleNext = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-      timerManager?.startQuestionTimer();
+      if (timerManager?.startQuestion) {
+        timerManager.startQuestion(currentQuestionIndex + 1);
+      }
     }
   }, [currentQuestionIndex, questions.length, timerManager]);
 
@@ -103,7 +101,12 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
 
     setIsSubmitting(true);
     try {
-      const results = quizEngine.completeQuiz();
+      const results = {
+        sessionId: session?.id,
+        answers: answers,
+        completedAt: Date.now(),
+        flags: session?.flags || []
+      };
       await onComplete(results);
     } catch (error) {
       console.error('Error submitting quiz:', error);
@@ -111,7 +114,7 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, quizEngine, onComplete, showAlert]);
+  }, [isSubmitting, session, answers, onComplete, showAlert]);
 
   // Timer event handlers
   function handleQuestionTimeUp() {
@@ -142,16 +145,13 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
     handleSubmit();
   }
 
-  function handleTimeWarning(type: 'question' | 'total', timeRemaining: number) {
-    const message = type === 'question' 
-      ? `${timeRemaining} seconds remaining for this question`
-      : `${Math.floor(timeRemaining / 60)} minutes remaining for the quiz`;
-    
+  function handleTimeWarning(timeRemaining) {
+    const message = `${timeRemaining} seconds remaining`;
     showAlert('soft', message);
   }
 
   // Integrity violation handler
-  function handleIntegrityViolation(type: string, details: any) {
+  function handleIntegrityViolation(violation) {
     const violationMessages = {
       'fullscreen-exit': 'Fullscreen mode was exited',
       'tab-blur': 'Browser tab lost focus',
@@ -161,7 +161,7 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
       'page-visibility': 'Page became hidden'
     };
 
-    const message = violationMessages[type as keyof typeof violationMessages] || 'Integrity violation detected';
+    const message = violationMessages[violation.type] || 'Integrity violation detected';
     showAlert('hard', message);
   }
 
@@ -189,26 +189,28 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
     <div className={`min-h-screen bg-gray-50 ${className}`}>
       {/* Fullscreen enforcement */}
       <FullscreenEnforcement
-        isRequired={isFullscreenRequired}
+        isRequired={true}
         isFullscreen={isFullscreen}
         onRequestFullscreen={requestFullscreen}
       />
 
       {/* Integrity violation alerts */}
-      {violations.map(violation => (
+      {violations.map((violation, index) => (
         <IntegrityViolationAlert
-          key={violation.id}
+          key={violation.timestamp || index}
           violation={violation}
-          onAcknowledge={() => acknowledgeViolation(violation.id)}
+          onAcknowledge={() => acknowledgeViolation && acknowledgeViolation(violation.timestamp)}
         />
       ))}
 
       {/* Auto-progress notification */}
-      <AutoProgressNotification
-        show={showAutoProgressNotification}
-        timeRemaining={autoProgressCountdown}
-        onCancel={handleCancelAutoProgress}
-      />
+      {AutoProgressNotification && (
+        <AutoProgressNotification
+          show={showAutoProgressNotification}
+          timeRemaining={autoProgressCountdown}
+          onCancel={handleCancelAutoProgress}
+        />
+      )}
 
       {/* Main quiz container */}
       <div className="max-w-4xl mx-auto px-4 py-8" data-quiz-container>

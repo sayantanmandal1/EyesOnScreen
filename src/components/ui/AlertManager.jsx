@@ -2,50 +2,37 @@
  * AlertManager - Integrates toast notifications and modal dialogs
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { ToastContainer } from './ToastContainer';
 import { AlertModal } from './AlertModal';
-import { AlertEngine, AlertEngineConfig, AlertState, AlertCallbacks } from '../../lib/proctoring/AlertEngine';
-import { FlagEvent } from '../../lib/proctoring/types';
+import { AlertEngine } from '../../lib/proctoring/AlertEngine';
 
-interface AlertManagerProps {
-  config: AlertEngineConfig;
-  onAlertAcknowledged?: (alert: AlertState) => void;
-  onAlertDismissed?: (alertId: string) => void;
-}
-
-export interface AlertManagerRef {
-  processFlag: (flag: FlagEvent) => void;
-  clearAllAlerts: () => void;
-  getActiveAlerts: () => AlertState[];
-}
-
-export const AlertManager = React.forwardRef<AlertManagerRef, AlertManagerProps>(({
+export const AlertManager = forwardRef(({
   config,
   onAlertAcknowledged,
   onAlertDismissed,
 }, ref) => {
-  const [alertEngine, setAlertEngine] = useState<AlertEngine | null>(null);
-  const [activeAlerts, setActiveAlerts] = useState<AlertState[]>([]);
-  const [currentHardAlert, setCurrentHardAlert] = useState<AlertState | null>(null);
+  const [alertEngine, setAlertEngine] = useState(null);
+  const [activeAlerts, setActiveAlerts] = useState([]);
+  const [currentHardAlert, setCurrentHardAlert] = useState(null);
 
   useEffect(() => {
-    const callbacks: AlertCallbacks = {
-      onSoftAlert: (alert: AlertState) => {
+    const callbacks = {
+      onSoftAlert: (alert) => {
         setActiveAlerts(prev => [...prev, alert]);
       },
-      onHardAlert: (alert: AlertState) => {
+      onHardAlert: (alert) => {
         setActiveAlerts(prev => [...prev, alert]);
         setCurrentHardAlert(alert);
       },
-      onAlertDismissed: (alertId: string) => {
+      onAlertDismissed: (alertId) => {
         setActiveAlerts(prev => prev.filter(alert => alert.id !== alertId));
-        
+
         // Clear hard alert if it's the one being dismissed
-        setCurrentHardAlert(prev => 
+        setCurrentHardAlert(prev =>
           prev && prev.id === alertId ? null : prev
         );
-        
+
         onAlertDismissed?.(alertId);
       },
     };
@@ -62,19 +49,19 @@ export const AlertManager = React.forwardRef<AlertManagerRef, AlertManagerProps>
   useEffect(() => {
     if (alertEngine) {
       // Store reference to engine for external access
-      (window as any).__alertEngine = alertEngine;
+      window.__alertEngine = alertEngine;
     }
-    
+
     return () => {
-      delete (window as any).__alertEngine;
+      delete window.__alertEngine;
     };
   }, [alertEngine]);
 
-  const handleToastDismiss = (alertId: string) => {
+  const handleToastDismiss = (alertId) => {
     alertEngine?.dismissAlert(alertId);
   };
 
-  const handleModalAcknowledge = (alertId: string) => {
+  const handleModalAcknowledge = (alertId) => {
     const alert = activeAlerts.find(a => a.id === alertId);
     if (alert) {
       onAlertAcknowledged?.(alert);
@@ -82,17 +69,17 @@ export const AlertManager = React.forwardRef<AlertManagerRef, AlertManagerProps>
     alertEngine?.acknowledgeAlert(alertId);
   };
 
-  const handleModalDismiss = (alertId: string) => {
+  const handleModalDismiss = (alertId) => {
     alertEngine?.dismissAlert(alertId);
   };
 
   // Process flags from external sources
-  const processFlag = (flag: FlagEvent) => {
+  const processFlag = (flag) => {
     alertEngine?.processFlag(flag);
   };
 
   // Expose processFlag method
-  React.useImperativeHandle(
+  useImperativeHandle(
     ref,
     () => ({
       processFlag,
@@ -128,22 +115,22 @@ AlertManager.displayName = 'AlertManager';
 
 // Hook for using AlertManager in components
 export const useAlertManager = () => {
-  const processFlag = (flag: FlagEvent) => {
-    const engine = (window as any).__alertEngine as AlertEngine;
+  const processFlag = (flag) => {
+    const engine = window.__alertEngine;
     if (engine) {
       engine.processFlag(flag);
     }
   };
 
   const clearAllAlerts = () => {
-    const engine = (window as any).__alertEngine as AlertEngine;
+    const engine = window.__alertEngine;
     if (engine) {
       engine.clearAllAlerts();
     }
   };
 
-  const getActiveAlerts = (): AlertState[] => {
-    const engine = (window as any).__alertEngine as AlertEngine;
+  const getActiveAlerts = () => {
+    const engine = window.__alertEngine;
     return engine ? engine.getActiveAlerts() : [];
   };
 

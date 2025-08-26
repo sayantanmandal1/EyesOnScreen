@@ -2,18 +2,7 @@
  * Quiz progress indicator with visual progress tracking
  */
 
-import React from 'react';
-
-interface QuizProgressIndicatorProps {
-  currentQuestion: number;
-  totalQuestions: number;
-  answeredQuestions: number[];
-  className?: string;
-  showLabels?: boolean;
-  compact?: boolean;
-}
-
-export const QuizProgressIndicator: React.FC<QuizProgressIndicatorProps> = ({
+export const QuizProgressIndicator = ({
   currentQuestion,
   totalQuestions,
   answeredQuestions,
@@ -24,7 +13,7 @@ export const QuizProgressIndicator: React.FC<QuizProgressIndicatorProps> = ({
   const progressPercentage = (currentQuestion / totalQuestions) * 100;
   const answeredPercentage = (answeredQuestions.length / totalQuestions) * 100;
 
-  const getQuestionStatus = (questionIndex: number) => {
+  const getQuestionStatus = (questionIndex) => {
     if (questionIndex < currentQuestion) {
       return answeredQuestions.includes(questionIndex) ? 'completed' : 'skipped';
     } else if (questionIndex === currentQuestion) {
@@ -34,7 +23,7 @@ export const QuizProgressIndicator: React.FC<QuizProgressIndicatorProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
         return 'bg-green-500 border-green-500';
@@ -47,7 +36,7 @@ export const QuizProgressIndicator: React.FC<QuizProgressIndicatorProps> = ({
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
         return '✓';
@@ -80,7 +69,7 @@ export const QuizProgressIndicator: React.FC<QuizProgressIndicatorProps> = ({
   }
 
   return (
-    <div className={`${className}`}>
+    <div className={className}>
       {/* Progress header */}
       {showLabels && (
         <div className="flex items-center justify-between mb-4">

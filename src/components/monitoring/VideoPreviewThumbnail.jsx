@@ -2,26 +2,18 @@
  * Video preview thumbnail with privacy controls
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 
-interface VideoPreviewThumbnailProps {
-  stream: MediaStream | null;
-  className?: string;
-  size?: 'small' | 'medium' | 'large';
-  showControls?: boolean;
-  showOverlay?: boolean;
-}
-
-export const VideoPreviewThumbnail: React.FC<VideoPreviewThumbnailProps> = ({
+export const VideoPreviewThumbnail = ({
   stream,
   className = '',
   size = 'medium',
   showControls = true,
   showOverlay = true
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const { privacySettings, updatePrivacySettings, currentSignals } = useAppStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showPrivacyMask, setShowPrivacyMask] = useState(false);

@@ -10,7 +10,7 @@ import { VisionSignals } from '../../../lib/vision/types';
 
 // Mock the store
 jest.mock('../../../store/appStore');
-const mockUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore>;
+const mockUseAppStore = useAppStore;
 
 describe('MonitoringStatusDisplay', () => {
   const mockVisionSignals: VisionSignals = {
@@ -55,7 +55,7 @@ describe('MonitoringStatusDisplay', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAppStore.mockReturnValue(defaultStoreState as any);
+    mockUseAppStore.mockReturnValue(defaultStoreState);
   });
 
   it('renders monitoring status display', () => {

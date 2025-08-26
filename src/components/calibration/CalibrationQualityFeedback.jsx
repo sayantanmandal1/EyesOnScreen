@@ -2,36 +2,27 @@
  * CalibrationQualityFeedback - Quality feedback and retry options
  */
 
-import React from 'react';
-
-interface CalibrationQualityFeedbackProps {
-  quality: number;
-  onRetry: () => void;
-  onCancel: () => void;
-  attemptNumber?: number;
-}
-
-export const CalibrationQualityFeedback: React.FC<CalibrationQualityFeedbackProps> = ({
+export const CalibrationQualityFeedback = ({
   quality,
   onRetry,
   onCancel,
   attemptNumber = 1
 }) => {
-  const getQualityColor = (score: number): string => {
+  const getQualityColor = (score) => {
     if (score >= 0.8) return 'text-green-400';
     if (score >= 0.6) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const getQualityLabel = (score: number): string => {
+  const getQualityLabel = (score) => {
     if (score >= 0.8) return 'Excellent';
     if (score >= 0.6) return 'Good';
     if (score >= 0.4) return 'Fair';
     return 'Poor';
   };
 
-  const getRecommendations = (score: number): string[] => {
-    const recommendations: string[] = [];
+  const getRecommendations = (score) => {
+    const recommendations = [];
     
     if (score < 0.8) {
       recommendations.push('Ensure you are sitting directly in front of the camera');

@@ -2,20 +2,16 @@
  * EnvironmentCheck - Environment baseline collection component
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-interface EnvironmentCheckProps {
-  onComplete: (data: { lighting: number; stability: number; quality: number }) => void;
-  isProcessing: boolean;
-}
-
-export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
+export const EnvironmentCheck = ({
   onComplete,
-  isProcessing
+  isProcessing,
+  cameraStream
 }) => {
   const [isCollecting, setIsCollecting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [collectedData, setCollectedData] = useState<{ lighting: number; stability: number; quality: number }[]>([]);
+  const [collectedData, setCollectedData] = useState([]);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(true);
   const [currentCheck, setCurrentCheck] = useState('');
@@ -84,7 +80,7 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
     return () => clearInterval(dataInterval);
   }, []);
 
-  const generateMockHistogram = (): number[] => {
+  const generateMockHistogram = () => {
     // Generate a mock lighting histogram (256 bins)
     const histogram = new Array(256).fill(0);
     
@@ -100,24 +96,28 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
   const completeEnvironmentCheck = useCallback(() => {
     setIsCollecting(false);
     
+    // Ensure camera is still active
+    if (!cameraStream || !cameraStream.active) {
+      console.warn('Camera stream not active during environment check completion');
+    }
+    
     // Calculate environment baseline from collected data
     const baseline = calculateEnvironmentBaseline(collectedData);
     
     onComplete({
-      type: 'environment-baseline',
-      data: collectedData,
-      baseline,
+      lighting: baseline?.mean || 0,
+      stability: baseline?.shadowStability || 0,
       quality: calculateEnvironmentQuality(baseline)
     });
-  }, [collectedData, onComplete]);
+  }, [collectedData, onComplete, cameraStream]);
 
-  const calculateEnvironmentBaseline = (data: any[]) => {
+  const calculateEnvironmentBaseline = (data) => {
     if (data.length === 0) return null;
     
     // Calculate average histogram
     const avgHistogram = new Array(256).fill(0);
     data.forEach(sample => {
-      sample.lightingHistogram.forEach((value: number, index: number) => {
+      sample.lightingHistogram.forEach((value, index) => {
         avgHistogram[index] += value;
       });
     });
@@ -142,13 +142,13 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
     };
   };
 
-  const calculateVariance = (values: number[]): number => {
+  const calculateVariance = (values) => {
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
     const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
     return squaredDiffs.reduce((sum, diff) => sum + diff, 0) / values.length;
   };
 
-  const calculateEnvironmentQuality = (baseline: any): number => {
+  const calculateEnvironmentQuality = (baseline) => {
     if (!baseline) return 0;
     
     // Quality based on stability and optimal conditions
@@ -172,6 +172,20 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
     return Math.min(quality, 1.0);
   };
 
+  // Check camera status
+  if (!cameraStream || !cameraStream.active) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-red-400 text-xl mb-4">Camera Not Active</div>
+          <p className="text-gray-300">
+            Camera must be active for environment analysis
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (showCountdown) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -181,6 +195,9 @@ export const EnvironmentCheck: React.FC<EnvironmentCheckProps> = ({
           </div>
           <p className="text-gray-300">
             Sit still and look at the camera
+          </p>
+          <p className="text-green-400 text-sm mt-2">
+            ✓ Camera Active
           </p>
         </div>
       </div>

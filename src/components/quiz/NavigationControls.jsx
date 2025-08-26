@@ -4,25 +4,10 @@
  * Handles question navigation, automatic progression, and navigation prevention
  */
 
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import { NavigationPrevention } from '../../lib/quiz/TimerManager';
 
-interface NavigationControlsProps {
-  currentQuestion: number;
-  totalQuestions: number;
-  canGoNext: boolean;
-  canGoPrevious: boolean;
-  autoProgressEnabled: boolean;
-  onNext: () => void;
-  onPrevious: () => void;
-  onSubmit: () => void;
-  isLastQuestion: boolean;
-  preventNavigation?: boolean;
-  onNavigationAttempt?: () => void;
-  className?: string;
-}
-
-export const NavigationControls: React.FC<NavigationControlsProps> = ({
+export const NavigationControls = ({
   currentQuestion,
   totalQuestions,
   canGoNext,
@@ -36,10 +21,10 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
   onNavigationAttempt,
   className = ''
 }) => {
-  const navigationPrevention = React.useRef<NavigationPrevention | null>(null);
+  const navigationPrevention = useRef(null);
 
   // Initialize navigation prevention
-  React.useEffect(() => {
+  useEffect(() => {
     if (preventNavigation) {
       navigationPrevention.current = new NavigationPrevention();
       navigationPrevention.current.enable(onNavigationAttempt);
@@ -54,8 +39,8 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
   }, [preventNavigation, onNavigationAttempt]);
 
   // Handle keyboard navigation
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
       // Only allow specific navigation keys
       if (event.key === 'Enter' && canGoNext) {
         event.preventDefault();
@@ -76,7 +61,7 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
           // Focus back to quiz container
           const firstFocusable = quizContainer.querySelector(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          ) as HTMLElement;
+          );
           firstFocusable?.focus();
         }
       }
@@ -197,13 +182,7 @@ export const NavigationControls: React.FC<NavigationControlsProps> = ({
 /**
  * Auto-progression notification component
  */
-interface AutoProgressNotificationProps {
-  show: boolean;
-  timeRemaining: number;
-  onCancel?: () => void;
-}
-
-export const AutoProgressNotification: React.FC<AutoProgressNotificationProps> = ({
+export const AutoProgressNotification = ({
   show,
   timeRemaining,
   onCancel

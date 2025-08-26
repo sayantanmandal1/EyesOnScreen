@@ -2,44 +2,71 @@
  * CalibrationWizard - Multi-step calibration interface with progress indicators
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { CalibrationStep, CalibrationPoint, CalibrationSession } from '../../lib/calibration/types';
 import { CalibrationDots } from './CalibrationDots';
 import { HeadMovementGuide } from './HeadMovementGuide';
 import { EnvironmentCheck } from './EnvironmentCheck';
 import { CalibrationProgress } from './CalibrationProgress';
 import { CalibrationQualityFeedback } from './CalibrationQualityFeedback';
+import { useCameraManager } from '../../lib/camera/useCameraManager';
 
-interface CalibrationWizardProps {
-  onComplete: (success: boolean) => void;
-  onCancel: () => void;
-}
-
-export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
+export const CalibrationWizard = ({
   onComplete,
   onCancel
 }) => {
-  const { 
-    calibrationSession, 
+  const {
+    calibrationSession,
     setCalibrationSession,
-    calibrationProfile,
-    setCalibrationProfile 
+    setCalibrationProfile
   } = useAppStore();
-  
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
 
-  // Initialize calibration session
+  // Initialize camera manager
+  const {
+    currentStream,
+    isInitializing: isCameraInitializing,
+    initializeStream,
+    cleanup: cleanupCamera
+  } = useCameraManager({
+    autoStart: true,
+    onStreamError: (error) => {
+      setCameraError(`Camera error: ${error.message}`);
+    },
+    onStreamReconnected: () => {
+      setCameraError(null);
+    }
+  });
+
+  // Initialize calibration session and ensure camera is ready
   useEffect(() => {
     if (!calibrationSession) {
       initializeCalibration();
     }
   }, []);
 
+  // Ensure camera is active during calibration
+  useEffect(() => {
+    if (!currentStream && !isCameraInitializing) {
+      initializeStream().catch((error) => {
+        setCameraError(`Failed to initialize camera: ${error.message}`);
+      });
+    }
+  }, [currentStream, isCameraInitializing, initializeStream]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      cleanupCamera();
+    };
+  }, [cleanupCamera]);
+
   const initializeCalibration = useCallback(() => {
-    const steps: CalibrationStep[] = [
+    const steps = [
       {
         id: 'gaze-calibration',
         name: 'Gaze Calibration',
@@ -54,7 +81,7 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
         completed: false
       },
       {
-        id: 'head-pose-calibration', 
+        id: 'head-pose-calibration',
         name: 'Head Movement Calibration',
         description: 'Follow the guided head movements',
         duration: 15000, // 15 seconds
@@ -85,14 +112,14 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
       steps,
       currentStepIndex: 0,
       overallQuality: 0,
-      status: 'in-progress' as const
+      status: 'in-progress'
     };
 
     setCalibrationSession(session);
   }, [setCalibrationSession]);
 
-  const generateCalibrationPoints = (): CalibrationPoint[] => {
-    const points: CalibrationPoint[] = [];
+  const generateCalibrationPoints = () => {
+    const points = [];
     const positions = [
       { x: 0.1, y: 0.1 }, // Top-left
       { x: 0.5, y: 0.1 }, // Top-center
@@ -117,11 +144,11 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     return points;
   };
 
-  const handleStepComplete = useCallback(async (stepData: { points?: CalibrationPoint[]; quality?: number }) => {
+  const handleStepComplete = useCallback(async () => {
     if (!calibrationSession) return;
 
     setIsProcessing(true);
-    
+
     try {
       // Update current step as completed
       const updatedSteps = [...calibrationSession.steps];
@@ -151,23 +178,23 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     }
   }, [calibrationSession, currentStep, setCalibrationSession]);
 
-  const finalizeCalibration = async (session: CalibrationSession) => {
+  const finalizeCalibration = async (session) => {
     // Calculate overall quality and create calibration profile
     const quality = calculateOverallQuality(session);
-    
+
     if (quality >= 0.8) {
       // Create calibration profile from session data
       const profile = await createCalibrationProfile(session);
       setCalibrationProfile(profile);
-      
+
       const finalSession = {
         ...session,
         endTime: Date.now(),
         overallQuality: quality,
         profile,
-        status: 'completed' as const
+        status: 'completed'
       };
-      
+
       setCalibrationSession(finalSession);
       onComplete(true);
     } else {
@@ -175,12 +202,12 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     }
   };
 
-  const calculateOverallQuality = (session: CalibrationSession): number => {
+  const calculateOverallQuality = () => {
     // Placeholder implementation - will be enhanced in task 4.2
     return 0.85; // Mock quality score
   };
 
-  const createCalibrationProfile = async (session: CalibrationSession) => {
+  const createCalibrationProfile = async () => {
     // Placeholder implementation - will be enhanced in task 4.2
     return {
       ipd: 65, // Mock interpupillary distance
@@ -190,8 +217,8 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
         bias: [0, 0]
       },
       headPoseBounds: {
-        yawRange: [-20, 20] as [number, number],
-        pitchRange: [-15, 15] as [number, number]
+        yawRange: [-20, 20],
+        pitchRange: [-15, 15]
       },
       lightingBaseline: {
         histogram: new Array(256).fill(0),
@@ -200,8 +227,9 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
       },
       quality: 0.85
     };
-  }; 
- const handleRetryCalibration = () => {
+  };
+
+  const handleRetryCalibration = () => {
     setShowQualityFeedback(false);
     setCurrentStep(0);
     initializeCalibration();
@@ -211,6 +239,49 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
         <div className="text-white">Initializing calibration...</div>
+      </div>
+    );
+  }
+
+  // Show camera error if present
+  if (cameraError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-center">
+          <div className="text-red-400 text-xl mb-4">Camera Error</div>
+          <div className="text-gray-300 mb-6">{cameraError}</div>
+          <div className="space-x-4">
+            <button
+              onClick={() => {
+                setCameraError(null);
+                initializeStream().catch((error) => {
+                  setCameraError(`Failed to initialize camera: ${error.message}`);
+                });
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Retry Camera
+            </button>
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while camera initializes
+  if (isCameraInitializing || !currentStream) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Initializing Camera...</div>
+          <div className="text-gray-300">Please allow camera access to continue</div>
+        </div>
       </div>
     );
   }
@@ -247,7 +318,7 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
             <p className="text-gray-300 mb-4">
               {currentStepData.description}
             </p>
-            
+
             {/* Instructions */}
             <div className="bg-gray-800 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-semibold text-white mb-2">Instructions:</h3>
@@ -269,20 +340,23 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
                 points={currentStepData.points || []}
                 onComplete={handleStepComplete}
                 isProcessing={isProcessing}
+                cameraStream={currentStream}
               />
             )}
-            
+
             {currentStepData.id === 'head-pose-calibration' && (
               <HeadMovementGuide
                 onComplete={handleStepComplete}
                 isProcessing={isProcessing}
+                cameraStream={currentStream}
               />
             )}
-            
+
             {currentStepData.id === 'environment-baseline' && (
               <EnvironmentCheck
                 onComplete={handleStepComplete}
                 isProcessing={isProcessing}
+                cameraStream={currentStream}
               />
             )}
           </div>
@@ -297,7 +371,7 @@ export const CalibrationWizard: React.FC<CalibrationWizardProps> = ({
           >
             Cancel
           </button>
-          
+
           <div className="text-gray-400 text-sm">
             Step {currentStep + 1} of {calibrationSession.steps.length}
           </div>

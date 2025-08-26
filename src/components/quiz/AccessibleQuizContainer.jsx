@@ -5,33 +5,12 @@
  * for the entire quiz experience
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Question } from '../../lib/quiz/types';
+import { useEffect, useRef, useState } from 'react';
 import { QuestionRenderer } from './QuestionRenderer';
 import { NavigationControls } from './NavigationControls';
 import { CountdownDisplay } from './CountdownDisplay';
 
-interface AccessibleQuizContainerProps {
-  questions: Question[];
-  currentQuestionIndex: number;
-  userAnswers: Record<string, string>;
-  onAnswerChange: (questionId: string, answer: string) => void;
-  onNext: () => void;
-  onSubmit: () => void;
-  timeDisplay: {
-    questionTime: string;
-    totalTime: string;
-    questionStatus: 'normal' | 'warning' | 'critical' | 'expired';
-    totalStatus: 'normal' | 'warning' | 'critical' | 'expired';
-    questionProgress: number;
-    totalProgress: number;
-  };
-  isReadOnly?: boolean;
-  showCorrectAnswers?: boolean;
-  className?: string;
-}
-
-export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = ({
+export const AccessibleQuizContainer = ({
   questions,
   currentQuestionIndex,
   userAnswers,
@@ -43,8 +22,8 @@ export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = (
   showCorrectAnswers = false,
   className = ''
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const skipLinkRef = useRef<HTMLAnchorElement>(null);
+  const containerRef = useRef(null);
+  const skipLinkRef = useRef(null);
   const [focusTrapActive, setFocusTrapActive] = useState(true);
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -58,12 +37,12 @@ export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = (
     const container = containerRef.current;
     const focusableElements = container.querySelectorAll(
       'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    ) as NodeListOf<HTMLElement>;
+    );
 
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
 
-    const handleTabKey = (event: KeyboardEvent) => {
+    const handleTabKey = (event) => {
       if (event.key !== 'Tab') return;
 
       if (event.shiftKey) {
@@ -81,7 +60,7 @@ export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = (
       }
     };
 
-    const handleEscapeKey = (event: KeyboardEvent) => {
+    const handleEscapeKey = (event) => {
       if (event.key === 'Escape') {
         // Focus skip link for emergency exit
         skipLinkRef.current?.focus();
@@ -99,7 +78,7 @@ export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = (
 
   // Keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event) => {
       // Only handle shortcuts when not typing in inputs
       const activeElement = document.activeElement;
       const isTyping = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
@@ -154,9 +133,9 @@ export const AccessibleQuizContainer: React.FC<AccessibleQuizContainerProps> = (
     }
   };
 
-  const handleSkipToContent = (event: React.MouseEvent) => {
+  const handleSkipToContent = (event) => {
     event.preventDefault();
-    const questionElement = containerRef.current?.querySelector('[role="group"]') as HTMLElement;
+    const questionElement = containerRef.current?.querySelector('[role="group"]');
     questionElement?.focus();
   };
 

@@ -5,20 +5,10 @@
 
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { CameraStreamManager } from '../../lib/camera';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../../store';
 
-interface CameraPreviewProps {
-  stream: MediaStream | null;
-  streamManager?: CameraStreamManager;
-  className?: string;
-  showControls?: boolean;
-  onStreamError?: (error: Error) => void;
-  onStreamReconnected?: (stream: MediaStream) => void;
-}
-
-export const CameraPreview: React.FC<CameraPreviewProps> = ({
+export const CameraPreview = ({
   stream,
   streamManager,
   className = '',
@@ -26,10 +16,10 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
   onStreamError,
   onStreamReconnected,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef(null);
   const { privacySettings, updatePrivacySettings, showAlert } = useAppStore();
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [streamError, setStreamError] = useState<string | null>(null);
+  const [streamError, setStreamError] = useState(null);
 
   // Set up video element with stream
   useEffect(() => {
@@ -45,25 +35,25 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
   useEffect(() => {
     if (!streamManager) return;
 
-    const handleStreamError = (error: Error) => {
+    const handleStreamError = (error) => {
       setStreamError(error.message);
       onStreamError?.(error);
       showAlert('soft', 'Camera connection lost. Attempting to reconnect...');
     };
 
-    const handleReconnectAttempt = (attempt: number) => {
+    const handleReconnectAttempt = (attempt) => {
       setIsReconnecting(true);
       showAlert('soft', `Reconnecting camera... (${attempt})`);
     };
 
-    const handleReconnectSuccess = (newStream: MediaStream) => {
+    const handleReconnectSuccess = (newStream) => {
       setIsReconnecting(false);
       setStreamError(null);
       onStreamReconnected?.(newStream);
       showAlert('soft', 'Camera reconnected successfully');
     };
 
-    const handleReconnectFailed = (error: Error) => {
+    const handleReconnectFailed = (error) => {
       setIsReconnecting(false);
       setStreamError(error.message);
       showAlert('hard', 'Failed to reconnect camera. Please refresh the page.');

@@ -5,21 +5,9 @@
  * ARIA labels, and screen reader support
  */
 
-import React, { useEffect, useRef } from 'react';
-import { Question } from '../../lib/quiz/types';
+import { useEffect, useRef } from 'react';
 
-interface QuestionRendererProps {
-  question: Question;
-  questionNumber: number;
-  totalQuestions: number;
-  userAnswer: string;
-  onAnswerChange: (answer: string) => void;
-  isReadOnly?: boolean;
-  showCorrectAnswer?: boolean;
-  className?: string;
-}
-
-export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
+export const QuestionRenderer = ({
   question,
   questionNumber,
   totalQuestions,
@@ -29,8 +17,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
   showCorrectAnswer = false,
   className = ''
 }) => {
-  const questionRef = useRef<HTMLDivElement>(null);
-  const firstInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const questionRef = useRef(null);
+  const firstInputRef = useRef(null);
 
   // Focus management - focus first input when question changes
   useEffect(() => {
@@ -56,15 +44,15 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
     }
   }, [question.id, questionNumber, totalQuestions, question.text]);
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  const handleKeyDown = (event) => {
     // Handle keyboard navigation within question
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       const focusableElements = questionRef.current?.querySelectorAll(
         'input[type="radio"], input[type="text"], textarea, button'
-      ) as NodeListOf<HTMLElement>;
+      );
       
       if (focusableElements && focusableElements.length > 1) {
-        const currentIndex = Array.from(focusableElements).indexOf(document.activeElement as HTMLElement);
+        const currentIndex = Array.from(focusableElements).indexOf(document.activeElement);
         let nextIndex;
         
         if (event.key === 'ArrowDown') {
@@ -115,7 +103,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               >
                 <div className="flex items-center h-5">
                   <input
-                    ref={index === 0 ? firstInputRef as React.RefObject<HTMLInputElement> : undefined}
+                    ref={index === 0 ? firstInputRef : undefined}
                     id={optionId}
                     name={`question-${question.id}`}
                     type="radio"
@@ -197,7 +185,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
           Your answer:
         </label>
         <textarea
-          ref={firstInputRef as React.RefObject<HTMLTextAreaElement>}
+          ref={firstInputRef}
           id={`${question.id}-answer`}
           name={`question-${question.id}`}
           value={userAnswer}

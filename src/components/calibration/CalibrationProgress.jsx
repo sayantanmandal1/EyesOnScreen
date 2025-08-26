@@ -2,15 +2,7 @@
  * CalibrationProgress - Progress indicators for calibration steps
  */
 
-import React from 'react';
-import { CalibrationStep } from '../../lib/calibration/types';
-
-interface CalibrationProgressProps {
-  steps: CalibrationStep[];
-  currentStep: number;
-}
-
-export const CalibrationProgress: React.FC<CalibrationProgressProps> = ({
+export const CalibrationProgress = ({
   steps,
   currentStep
 }) => {

@@ -2,12 +2,7 @@
  * HeadMovementGuide - Guided head movement instructions and validation
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-
-interface HeadMovementGuideProps {
-  onComplete: (data: any) => void;
-  isProcessing: boolean;
-}
+import { useState, useEffect, useCallback } from 'react';
 
 const MOVEMENT_SEQUENCE = [
   { direction: 'center', instruction: 'Look straight ahead', duration: 2000 },
@@ -21,13 +16,14 @@ const MOVEMENT_SEQUENCE = [
   { direction: 'center', instruction: 'Return to center', duration: 2000 }
 ];
 
-export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
+export const HeadMovementGuide = ({
   onComplete,
-  isProcessing
+  isProcessing,
+  cameraStream
 }) => {
   const [currentMovementIndex, setCurrentMovementIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [collectedData, setCollectedData] = useState<any[]>([]);
+  const [collectedData, setCollectedData] = useState([]);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(true);
 
@@ -84,7 +80,7 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
     };
   }, [isActive, currentMovementIndex]);
 
-  const getYawForDirection = (direction: string): number => {
+  const getYawForDirection = (direction) => {
     switch (direction) {
       case 'left': return -15 + Math.random() * 5;
       case 'right': return 15 + Math.random() * 5;
@@ -93,7 +89,7 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
     }
   };
 
-  const getPitchForDirection = (direction: string): number => {
+  const getPitchForDirection = (direction) => {
     switch (direction) {
       case 'up': return -10 + Math.random() * 3;
       case 'down': return 10 + Math.random() * 3;
@@ -104,19 +100,38 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
 
   const completeCalibration = useCallback(() => {
     setIsActive(false);
+    
+    // Ensure camera is still active
+    if (!cameraStream || !cameraStream.active) {
+      console.warn('Camera stream not active during head movement calibration completion');
+    }
+    
     onComplete({
-      type: 'head-pose-calibration',
       data: collectedData,
       quality: calculateMovementQuality(collectedData)
     });
-  }, [collectedData, onComplete]);
+  }, [collectedData, onComplete, cameraStream]);
 
-  const calculateMovementQuality = (data: any[]): number => {
+  const calculateMovementQuality = (data) => {
     if (data.length === 0) return 0;
     
     const avgConfidence = data.reduce((sum, d) => sum + d.confidence, 0) / data.length;
     return Math.min(avgConfidence, 1.0);
   };
+
+  // Check camera status
+  if (!cameraStream || !cameraStream.active) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-red-400 text-xl mb-4">Camera Not Active</div>
+          <p className="text-gray-300">
+            Camera must be active for head movement calibration
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (showCountdown) {
     return (
@@ -127,6 +142,9 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
           </div>
           <p className="text-gray-300">
             Prepare to move your head as instructed
+          </p>
+          <p className="text-green-400 text-sm mt-2">
+            ✓ Camera Active
           </p>
         </div>
       </div>
@@ -183,11 +201,7 @@ export const HeadMovementGuide: React.FC<HeadMovementGuideProps> = ({
   );
 };
 
-interface HeadDirectionIndicatorProps {
-  direction: string;
-}
-
-const HeadDirectionIndicator: React.FC<HeadDirectionIndicatorProps> = ({ direction }) => {
+const HeadDirectionIndicator = ({ direction }) => {
   const getArrowStyle = () => {
     const baseClasses = "absolute w-8 h-8 text-blue-400 transition-all duration-500";
     

@@ -2,18 +2,9 @@
  * ToastContainer - Manages multiple toast notifications
  */
 
-import React from 'react';
 import { ToastNotification } from './ToastNotification';
-import { AlertState } from '../../lib/proctoring/AlertEngine';
 
-interface ToastContainerProps {
-  alerts: AlertState[];
-  onDismiss: (alertId: string) => void;
-  maxVisible?: number;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
-}
-
-export const ToastContainer: React.FC<ToastContainerProps> = ({
+export const ToastContainer = ({
   alerts,
   onDismiss,
   maxVisible = 3,

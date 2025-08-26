@@ -2,18 +2,10 @@
  * FullscreenEnforcement - Component for enforcing and managing fullscreen mode
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Maximize, X } from 'lucide-react';
 
-export interface FullscreenEnforcementProps {
-  isRequired: boolean;
-  isFullscreen: boolean;
-  onRequestFullscreen: () => Promise<boolean>;
-  onDismiss?: () => void;
-  className?: string;
-}
-
-export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
+export const FullscreenEnforcement = ({
   isRequired,
   isFullscreen,
   onRequestFullscreen,
@@ -123,8 +115,8 @@ export const FullscreenEnforcement: React.FC<FullscreenEnforcementProps> = ({
 
         <div className="mt-4 text-xs text-gray-500">
           <p>
-            If you&apos;re having trouble with fullscreen mode, try using F11 or check your 
-            browser&apos;s fullscreen settings.
+            If you're having trouble with fullscreen mode, try using F11 or check your 
+            browser's fullscreen settings.
           </p>
         </div>
       </div>

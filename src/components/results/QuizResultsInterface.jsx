@@ -2,26 +2,13 @@
  * Main quiz results interface that brings together all results components
  */
 
-import React, { useState } from 'react';
-import { QuizSession } from '../../lib/quiz/types';
-import { FlagEvent } from '../../lib/proctoring/types';
+import { useState } from 'react';
 import { QuizResultsSummary } from './QuizResultsSummary';
 import { QuizTimeline } from './QuizTimeline';
 import { FlagExplanationSystem } from './FlagExplanationSystem';
 import { ExportControls } from './ExportControls';
 
-interface QuizResultsInterfaceProps {
-  session: QuizSession;
-  flags: FlagEvent[];
-  riskScore: number;
-  onRetakeQuiz?: () => void;
-  onClose: () => void;
-  className?: string;
-}
-
-type TabType = 'summary' | 'timeline' | 'flags' | 'export';
-
-export const QuizResultsInterface: React.FC<QuizResultsInterfaceProps> = ({
+export const QuizResultsInterface = ({
   session,
   flags,
   riskScore,
@@ -29,37 +16,37 @@ export const QuizResultsInterface: React.FC<QuizResultsInterfaceProps> = ({
   onClose,
   className = ''
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('summary');
+  const [activeTab, setActiveTab] = useState('summary');
 
   const tabs = [
     {
-      id: 'summary' as TabType,
+      id: 'summary',
       label: 'Summary',
       icon: '📊',
       description: 'Overall results and risk assessment'
     },
     {
-      id: 'timeline' as TabType,
+      id: 'timeline',
       label: 'Timeline',
       icon: '⏱️',
       description: 'Per-question timeline and events'
     },
     {
-      id: 'flags' as TabType,
+      id: 'flags',
       label: 'Explanations',
       icon: '❓',
       description: 'Why was I flagged?',
       badge: flags.length > 0 ? flags.length : undefined
     },
     {
-      id: 'export' as TabType,
+      id: 'export',
       label: 'Export',
       icon: '💾',
       description: 'Download your data'
     }
   ];
 
-  const getRiskLevelColor = (score: number) => {
+  const getRiskLevelColor = (score) => {
     if (score >= 70) return 'text-red-600 bg-red-50 border-red-200';
     if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     if (score >= 20) return 'text-blue-600 bg-blue-50 border-blue-200';
