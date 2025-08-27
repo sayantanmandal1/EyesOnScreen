@@ -1,47 +1,145 @@
-/* WebGazer.js styling overrides */
+/* Professional WebGazer.js styling overrides */
 
-/* Hide default WebGazer elements */
+/* Hide default WebGazer elements for professional appearance */
 #webgazerVideoFeed {
   position: static !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
-  border-radius: 4px;
+  border-radius: 8px;
+  background: #000;
 }
 
 #webgazerFaceOverlay,
 #webgazerFaceFeedbackBox,
-#webgazerGazeDot {
+#webgazerGazeDot,
+#webgazerCanvas {
   display: none !important;
 }
 
-/* Ensure WebGazer canvas doesn't interfere */
+/* Ensure WebGazer canvas doesn't interfere with UI */
 canvas[id*="webgazer"] {
   pointer-events: none !important;
   z-index: -1 !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
 }
 
-/* Style the video container */
+/* Professional video container styling */
 #webgazerVideoContainer {
   position: relative;
   overflow: hidden;
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: #111827;
+  border: 2px solid #374151;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 #webgazerVideoContainer::before {
-  content: "Camera Feed";
+  content: "Professional Camera Feed";
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #9ca3af;
-  font-size: 12px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
   z-index: 1;
   pointer-events: none;
+  text-align: center;
 }
 
 #webgazerVideoContainer video {
   position: relative;
   z-index: 2;
+  border-radius: 6px;
+}
+
+/* Quality indicator styling */
+#gazeQualityIndicator {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Professional monitoring overlay */
+.professional-gaze-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.professional-gaze-overlay.active {
+  background: linear-gradient(
+    45deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    transparent 50%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
+}
+
+/* Alert animations */
+@keyframes professionalAlert {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.professional-alert {
+  animation: professionalAlert 2s ease-in-out infinite;
+}
+
+/* Calibration dot enhancements */
+.calibration-dot-professional {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  border: 3px solid rgba(59, 130, 246, 0.8);
+  background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.calibration-dot-professional.active {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+  border: 3px solid rgba(239, 68, 68, 0.9);
+  background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+  animation: professionalPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes professionalPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Professional status indicators */
+.professional-status-good {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.professional-status-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.professional-status-error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #webgazerVideoContainer {
+    border-width: 1px;
+  }
+  
+  #gazeQualityIndicator {
+    font-size: 9px !important;
+    padding: 1px 4px !important;
+  }
 }
