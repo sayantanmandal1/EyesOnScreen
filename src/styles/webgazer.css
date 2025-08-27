@@ -1,0 +1,47 @@
+/* WebGazer.js styling overrides */
+
+/* Hide default WebGazer elements */
+#webgazerVideoFeed {
+  position: static !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 4px;
+}
+
+#webgazerFaceOverlay,
+#webgazerFaceFeedbackBox,
+#webgazerGazeDot {
+  display: none !important;
+}
+
+/* Ensure WebGazer canvas doesn't interfere */
+canvas[id*="webgazer"] {
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Style the video container */
+#webgazerVideoContainer {
+  position: relative;
+  overflow: hidden;
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+#webgazerVideoContainer::before {
+  content: "Camera Feed";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #9ca3af;
+  font-size: 12px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#webgazerVideoContainer video {
+  position: relative;
+  z-index: 2;
+}
