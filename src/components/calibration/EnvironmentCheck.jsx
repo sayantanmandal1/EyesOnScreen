@@ -393,129 +393,151 @@ export const EnvironmentCheck = ({
     return Math.min(quality, 1.0);
   };
 
-  // Check camera status - use monitoring state from store, camera permission, or cameraStream prop
-  const isCameraActive = cameraStream?.active || monitoring?.isActive || cameraPermission === 'granted';
-
-  if (!isCameraActive) {
+  // Show error screen
+  if (error) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">Camera Not Active</div>
-          <p className="text-gray-300">
-            Camera must be active for environment analysis
-          </p>
-          <div className="mt-4 text-sm text-gray-400">
-            <p>Please ensure:</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Camera permission is granted</li>
-              <li>Camera is not being used by another application</li>
-              <li>Try refreshing the page if the issue persists</li>
-            </ul>
-          </div>
+          <div className="text-red-400 text-xl mb-4">Environment Check Error</div>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+          >
+            Reload Page
+          </button>
         </div>
       </div>
     );
   }
 
-  if (showCountdown) {
+  // Show initialization screen
+  if (isInitializing) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-6xl font-bold text-white mb-4">
-            {countdown || 'ANALYZING!'}
-          </div>
-          <p className="text-gray-300">
-            Sit still and look at the camera
-          </p>
-          <p className="text-green-400 text-sm mt-2">
-            ✓ Camera Active
+          <div className="text-blue-400 text-xl mb-4">Initializing Face Detection</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300 mb-2">{currentCheck}</p>
+          <p className="text-sm text-gray-400">
+            Please allow camera access when prompted
           </p>
         </div>
       </div>
     );
   }
 
+  // Show ready screen with start button
+  if (!isCollecting && !isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="text-green-400 text-xl mb-4">✓ Face Detection Ready</div>
+          <p className="text-gray-300 mb-4">
+            Environment analysis will take 10 seconds.<br/>
+            Please sit still and look at the camera.
+          </p>
+          <button
+            onClick={startEnvironmentCollection}
+            disabled={isProcessing}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg text-lg font-semibold transition-colors"
+          >
+            {isProcessing ? 'Processing...' : 'Start Environment Check'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main collection interface with live video
   return (
-    <div className="flex flex-col items-center justify-center h-full">
-      {/* Progress circle */}
-      <div className="relative w-48 h-48 mb-8">
-        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          {/* Background circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="#374151"
-            strokeWidth="8"
+    <div className="relative w-full h-full bg-gray-900">
+      {/* Hidden video element for MediaPipe */}
+      <video
+        ref={videoRef}
+        className="hidden"
+        autoPlay
+        muted
+        playsInline
+      />
+      
+      {/* Live video canvas with face detection overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            className="rounded-lg border-2 border-gray-600 bg-black"
           />
-          {/* Progress circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="#3B82F6"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 45}`}
-            strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-            className="transition-all duration-300"
-          />
-        </svg>
-
-        {/* Progress text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white">
-              {Math.round(progress)}%
-            </div>
-            <div className="text-gray-300 text-sm">
-              Complete
-            </div>
+          
+          {/* Live face detection status overlay */}
+          <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
+            {liveFaceData.detected ? (
+              <span className="text-green-400">
+                ✓ Face Detected ({Math.round(liveFaceData.confidence * 100)}%)
+              </span>
+            ) : (
+              <span className="text-red-400">⚠ No Face Detected</span>
+            )}
+          </div>
+          
+          {/* Stability indicator */}
+          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
+            Stability: {Math.round(liveFaceData.stability * 100)}%
           </div>
         </div>
       </div>
 
-      {/* Current check status */}
-      <div className="text-center">
-        <div className="text-xl text-white mb-2">
-          Environment Analysis
-        </div>
-        <div className="text-gray-300 mb-4">
-          {currentCheck}
+      {/* Progress and status overlay */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
+        {/* Progress bar */}
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white text-lg font-semibold">Environment Analysis</span>
+            <span className="text-white text-lg">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        {/* Real-time status indicators */}
-        {isCollecting && (
-          <div className="grid grid-cols-2 gap-3 mb-4 max-w-md mx-auto">
-            <div className={`flex items-center space-x-2 text-sm ${realTimeChecks.faceDetected ? 'text-green-400' : 'text-red-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${realTimeChecks.faceDetected ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span>Face Detection</span>
+        {/* Current status */}
+        <div className="text-center mb-4">
+          <div className="text-gray-300 text-sm mb-3">{currentCheck}</div>
+          
+          {/* Real-time status grid */}
+          <div className="grid grid-cols-4 gap-2 max-w-md mx-auto">
+            <div className={`flex flex-col items-center space-y-1 text-xs ${realTimeChecks.faceDetected ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`w-3 h-3 rounded-full ${realTimeChecks.faceDetected ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span>Face</span>
             </div>
-            <div className={`flex items-center space-x-2 text-sm ${realTimeChecks.lightingGood ? 'text-green-400' : 'text-yellow-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${realTimeChecks.lightingGood ? 'bg-green-400' : 'bg-yellow-400'}`} />
-              <span>Lighting</span>
+            <div className={`flex flex-col items-center space-y-1 text-xs ${realTimeChecks.lightingGood ? 'text-green-400' : 'text-yellow-400'}`}>
+              <div className={`w-3 h-3 rounded-full ${realTimeChecks.lightingGood ? 'bg-green-400' : 'bg-yellow-400'}`} />
+              <span>Light</span>
             </div>
-            <div className={`flex items-center space-x-2 text-sm ${realTimeChecks.positionStable ? 'text-green-400' : 'text-yellow-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${realTimeChecks.positionStable ? 'bg-green-400' : 'bg-yellow-400'}`} />
+            <div className={`flex flex-col items-center space-y-1 text-xs ${realTimeChecks.positionStable ? 'text-green-400' : 'text-yellow-400'}`}>
+              <div className={`w-3 h-3 rounded-full ${realTimeChecks.positionStable ? 'bg-green-400' : 'bg-yellow-400'}`} />
               <span>Position</span>
             </div>
-            <div className={`flex items-center space-x-2 text-sm ${realTimeChecks.noDistractions ? 'text-green-400' : 'text-yellow-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${realTimeChecks.noDistractions ? 'bg-green-400' : 'bg-yellow-400'}`} />
-              <span>Environment</span>
+            <div className={`flex flex-col items-center space-y-1 text-xs ${realTimeChecks.noDistractions ? 'text-green-400' : 'text-yellow-400'}`}>
+              <div className={`w-3 h-3 rounded-full ${realTimeChecks.noDistractions ? 'bg-green-400' : 'bg-yellow-400'}`} />
+              <span>Focus</span>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Completion message */}
+      {/* Completion overlay */}
       {!isCollecting && progress >= 100 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-90">
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80">
           <div className="text-center">
-            <div className="text-green-400 text-4xl mb-4">✓</div>
-            <div className="text-white text-xl">Environment analysis complete!</div>
-            <div className="text-gray-300 text-sm mt-2">
+            <div className="text-green-400 text-6xl mb-4">✓</div>
+            <div className="text-white text-2xl mb-2">Environment Analysis Complete!</div>
+            <div className="text-gray-300">
               Processing baseline data...
             </div>
           </div>
