@@ -43,13 +43,26 @@ export const EnvironmentCheck = ({
     'Finalizing environment baseline...'
   ];
 
-  // Real camera initialization with detailed debugging
+  // Real camera initialization with proper ref handling
   useEffect(() => {
     const initializeRealCamera = async () => {
-      setCurrentCheck('Requesting camera access...');
+      setCurrentCheck('Waiting for video element...');
       console.log('Starting camera initialization...');
-      
+
+      // Wait for video element to be available
+      let attempts = 0;
+      while (!videoRef.current && attempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!videoRef.current) {
+        throw new Error('Video element not available after waiting');
+      }
+
       try {
+        setCurrentCheck('Requesting camera access...');
+
         // Check if getUserMedia is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error('getUserMedia not supported in this browser');
@@ -67,10 +80,10 @@ export const EnvironmentCheck = ({
         console.log('Camera stream obtained:', stream);
         console.log('Video tracks:', stream.getVideoTracks());
 
-        if (videoRef.current) {
+        if (videoRef.current && canvasRef.current) {
           setCurrentCheck('Setting up video stream...');
           videoRef.current.srcObject = stream;
-          
+
           // Add detailed event listeners
           videoRef.current.onloadedmetadata = () => {
             console.log('Video metadata loaded:', {
@@ -78,13 +91,13 @@ export const EnvironmentCheck = ({
               videoHeight: videoRef.current.videoHeight,
               readyState: videoRef.current.readyState
             });
-            
+
             videoRef.current.play()
               .then(() => {
                 console.log('Video playing successfully');
                 setIsInitializing(false);
                 setCurrentCheck('Camera active');
-                
+
                 // Start real face detection
                 startRealFaceDetection();
               })
@@ -105,12 +118,12 @@ export const EnvironmentCheck = ({
           videoRef.current.oncanplay = () => console.log('Video can play');
           videoRef.current.onplaying = () => console.log('Video is playing');
         } else {
-          throw new Error('Video element not found');
+          throw new Error('Video or canvas element not found');
         }
 
       } catch (err) {
         console.error('Camera initialization error:', err);
-        
+
         let errorMessage = 'Failed to access camera';
         if (err.name === 'NotAllowedError') {
           errorMessage = 'Camera permission denied. Please allow camera access and reload.';
@@ -120,7 +133,7 @@ export const EnvironmentCheck = ({
           errorMessage = 'Camera is being used by another application. Please close other apps and reload.';
         } else if (err.name === 'OverconstrainedError') {
           errorMessage = 'Camera constraints not supported. Trying with basic settings...';
-          
+
           // Retry with basic constraints
           try {
             const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -139,7 +152,7 @@ export const EnvironmentCheck = ({
         } else {
           errorMessage = `Camera error: ${err.message}`;
         }
-        
+
         setError(errorMessage);
         setIsInitializing(false);
       }
@@ -156,17 +169,17 @@ export const EnvironmentCheck = ({
     }
 
     console.log('Starting real face detection...');
-    
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const video = videoRef.current;
-    
+
     // Set canvas size to match video
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
-    
+
     let animationFrame;
-    
+
     const detectFace = () => {
       if (!video.videoWidth || !video.videoHeight) {
         animationFrame = requestAnimationFrame(detectFace);
@@ -175,29 +188,29 @@ export const EnvironmentCheck = ({
 
       // Draw video frame to canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
+
       // Get image data for analysis
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      
+
       // Simple face detection using skin tone detection
       const faceData = detectFaceFromPixels(data, canvas.width, canvas.height);
-      
+
       // Draw face detection overlay on canvas
       if (faceData.detected && faceData.boundingBox) {
         drawFaceOverlay(ctx, faceData.boundingBox, faceData.confidence);
       }
-      
+
       setLiveFaceData(faceData);
       updateRealTimeChecksFromFaceData(faceData);
-      
+
       animationFrame = requestAnimationFrame(detectFace);
     };
-    
+
     detectFace();
-    
+
     // Store cleanup function
-    setRealFaceDetector({ 
+    setRealFaceDetector({
       stop: () => {
         if (animationFrame) {
           cancelAnimationFrame(animationFrame);
@@ -209,7 +222,7 @@ export const EnvironmentCheck = ({
   // Face detection algorithm using pixel analysis
   const detectFaceFromPixels = (data, width, height) => {
     const skinPixels = [];
-    
+
     // Sample pixels for skin tone detection (every 4th pixel for performance)
     for (let y = 0; y < height; y += 4) {
       for (let x = 0; x < width; x += 4) {
@@ -217,14 +230,14 @@ export const EnvironmentCheck = ({
         const r = data[index];
         const g = data[index + 1];
         const b = data[index + 2];
-        
+
         // Skin tone detection algorithm
         if (isSkinTone(r, g, b)) {
           skinPixels.push({ x, y });
         }
       }
     }
-    
+
     if (skinPixels.length < 30) { // Minimum skin pixels for face detection
       return {
         detected: false,
@@ -233,16 +246,16 @@ export const EnvironmentCheck = ({
         boundingBox: null
       };
     }
-    
+
     // Calculate bounding box from skin pixels
     const boundingBox = calculateBoundingBox(skinPixels);
-    
+
     // Calculate confidence based on skin pixel density and face shape
     const confidence = calculateFaceConfidence(skinPixels, boundingBox, width, height);
-    
+
     // Calculate stability (simplified for now)
     const stability = confidence > 0.5 ? 0.7 + Math.random() * 0.3 : 0;
-    
+
     return {
       detected: true,
       confidence,
@@ -265,17 +278,17 @@ export const EnvironmentCheck = ({
   // Calculate bounding box from skin pixels
   const calculateBoundingBox = (skinPixels) => {
     if (skinPixels.length === 0) return null;
-    
+
     let minX = Infinity, minY = Infinity;
     let maxX = -Infinity, maxY = -Infinity;
-    
+
     skinPixels.forEach(pixel => {
       minX = Math.min(minX, pixel.x);
       maxX = Math.max(maxX, pixel.x);
       minY = Math.min(minY, pixel.y);
       maxY = Math.max(maxY, pixel.y);
     });
-    
+
     return {
       x: minX,
       y: minY,
@@ -289,18 +302,18 @@ export const EnvironmentCheck = ({
   // Calculate face confidence
   const calculateFaceConfidence = (skinPixels, boundingBox, canvasWidth, canvasHeight) => {
     if (!boundingBox) return 0;
-    
+
     const boxArea = boundingBox.width * boundingBox.height;
     const skinDensity = skinPixels.length / (boxArea / 16); // Adjust for sampling
-    
+
     const aspectRatio = boundingBox.width / boundingBox.height;
     const idealAspectRatio = 0.75; // Faces are typically 3:4 ratio
     const aspectScore = 1 - Math.abs(aspectRatio - idealAspectRatio);
-    
+
     const canvasArea = canvasWidth * canvasHeight;
     const sizeRatio = boxArea / canvasArea;
     const sizeScore = sizeRatio > 0.02 && sizeRatio < 0.5 ? 1 : 0.3;
-    
+
     return Math.min(skinDensity * 0.4 + aspectScore * 0.3 + sizeScore * 0.3, 1);
   };
 
@@ -310,13 +323,13 @@ export const EnvironmentCheck = ({
     ctx.strokeStyle = '#00ff00';
     ctx.lineWidth = 3;
     ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
-    
+
     // Draw center point
     ctx.fillStyle = '#ff0000';
     ctx.beginPath();
     ctx.arc(boundingBox.centerX, boundingBox.centerY, 5, 0, 2 * Math.PI);
     ctx.fill();
-    
+
     // Draw confidence text
     ctx.fillStyle = '#00ff00';
     ctx.font = '16px Arial';
@@ -327,13 +340,45 @@ export const EnvironmentCheck = ({
     );
   };
 
+  // Analyze lighting from canvas pixels
+  const analyzeLightingFromCanvas = () => {
+    if (!canvasRef.current) {
+      return { luminance: 120, contrast: 50 };
+    }
+
+    try {
+      const ctx = canvasRef.current.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+      const data = imageData.data;
+
+      let totalLuminance = 0;
+      const pixelCount = data.length / 4;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+        totalLuminance += luminance;
+      }
+
+      return {
+        luminance: totalLuminance / pixelCount,
+        contrast: 50 // Simplified for now
+      };
+    } catch (error) {
+      console.warn('Failed to analyze lighting from canvas:', error);
+      return { luminance: 120, contrast: 50 };
+    }
+  };
+
   // Helper function to update real-time checks from face data
   const updateRealTimeChecksFromFaceData = useCallback((faceData) => {
     if (!faceData) return;
-    
+
     // Analyze lighting from canvas
     const lightingData = analyzeLightingFromCanvas();
-    
+
     setRealTimeChecks({
       faceDetected: faceData.detected && faceData.confidence > 0.7,
       lightingGood: lightingData.luminance > 60 && lightingData.luminance < 200,
@@ -354,10 +399,10 @@ export const EnvironmentCheck = ({
 
   const isPositionCentered = (boundingBox) => {
     if (!boundingBox) return false;
-    
+
     const centerX = boundingBox.centerX / 640;
     const centerY = boundingBox.centerY / 480;
-    
+
     return Math.abs(centerX - 0.5) < 0.3 && Math.abs(centerY - 0.5) < 0.3;
   };
 
@@ -382,7 +427,7 @@ export const EnvironmentCheck = ({
       }
 
       // Collect environment data
-      const lightingData = analyzeLightingFromVideo();
+      const lightingData = analyzeLightingFromCanvas();
 
       const environmentData = {
         timestamp: Date.now(),
@@ -409,23 +454,134 @@ export const EnvironmentCheck = ({
 
   const calculateDistractionScore = (faceData) => {
     if (!faceData || !faceData.detected) return 0.8; // High distraction if no face
-    
+
     let distractionScore = 0;
-    
+
     // Check if face is centered
     if (!isPositionCentered(faceData.boundingBox)) {
       distractionScore += 0.3;
     }
-    
+
     // Low confidence indicates poor conditions
     if (faceData.confidence < 0.7) {
       distractionScore += 0.2;
     }
-    
+
     return Math.min(distractionScore, 1);
   };
 
 
+
+  // Helper functions for environment analysis
+  const calculateEnvironmentScore = (detectionRate, confidence, stability, distractionScore) => {
+    // Weighted scoring system
+    const detectionWeight = 0.4;  // 40% - Most important
+    const confidenceWeight = 0.3; // 30% - Face quality
+    const stabilityWeight = 0.2;  // 20% - Position stability
+    const distractionWeight = 0.1; // 10% - Environment cleanliness
+
+    const detectionScore = detectionRate;
+    const confidenceScore = confidence;
+    const stabilityScore = stability;
+    const distractionScore_inverted = 1 - distractionScore; // Lower distraction = higher score
+
+    return (
+      detectionScore * detectionWeight +
+      confidenceScore * confidenceWeight +
+      stabilityScore * stabilityWeight +
+      distractionScore_inverted * distractionWeight
+    );
+  };
+
+  const calculateVariance = (values) => {
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+    return squaredDiffs.reduce((sum, diff) => sum + diff, 0) / values.length;
+  };
+
+  const calculateEnvironmentBaseline = (data) => {
+    if (data.length === 0) {
+      return {
+        faceDetectionRate: 0,
+        averageLuminance: 120,
+        averageConfidence: 0,
+        faceStability: 0,
+        environmentScore: 0,
+        timestamp: Date.now()
+      };
+    }
+
+    // Filter out samples without face detection
+    const validSamples = data.filter(d => d.faceDetected);
+    const faceDetectionRate = validSamples.length / data.length;
+
+    if (validSamples.length === 0) {
+      console.warn('No valid face detection samples found');
+      return {
+        faceDetectionRate: 0,
+        averageLuminance: 120,
+        averageConfidence: 0,
+        faceStability: 0,
+        environmentScore: 0,
+        timestamp: Date.now()
+      };
+    }
+
+    // Calculate real metrics from face detection data
+    const avgLuminance = validSamples.reduce((sum, d) => sum + (d.lightingData?.luminance || 120), 0) / validSamples.length;
+    const avgConfidence = validSamples.reduce((sum, d) => sum + (d.faceConfidence || 0), 0) / validSamples.length;
+    const avgStability = validSamples.reduce((sum, d) => sum + (d.environmentStability || 0), 0) / validSamples.length;
+    const avgDistractionScore = validSamples.reduce((sum, d) => sum + (d.distractionScore || 0), 0) / validSamples.length;
+
+    return {
+      faceDetectionRate,
+      averageLuminance: avgLuminance,
+      averageConfidence: avgConfidence,
+      faceStability: avgStability,
+      distractionScore: avgDistractionScore,
+      environmentScore: calculateEnvironmentScore(faceDetectionRate, avgConfidence, avgStability, avgDistractionScore),
+      validSamples: validSamples.length,
+      totalSamples: data.length,
+      timestamp: Date.now()
+    };
+  };
+
+  const calculateEnvironmentQuality = (baseline) => {
+    if (!baseline) return 0;
+
+    let quality = 0;
+
+    // Face detection quality (50% of total score)
+    if (baseline.faceDetectionRate > 0.9) quality += 0.25;
+    else if (baseline.faceDetectionRate > 0.8) quality += 0.2;
+    else if (baseline.faceDetectionRate > 0.6) quality += 0.15;
+    else if (baseline.faceDetectionRate > 0.4) quality += 0.1;
+
+    if (baseline.averageConfidence > 0.8) quality += 0.25;
+    else if (baseline.averageConfidence > 0.6) quality += 0.2;
+    else if (baseline.averageConfidence > 0.4) quality += 0.15;
+    else if (baseline.averageConfidence > 0.2) quality += 0.1;
+
+    // Lighting quality (25% of total score)
+    if (baseline.averageLuminance > 80 && baseline.averageLuminance < 180) {
+      quality += 0.25;
+    } else if (baseline.averageLuminance > 60 && baseline.averageLuminance < 200) {
+      quality += 0.15;
+    } else if (baseline.averageLuminance > 40 && baseline.averageLuminance < 220) {
+      quality += 0.1;
+    }
+
+    // Stability quality (15% of total score)
+    if (baseline.faceStability > 0.8) quality += 0.15;
+    else if (baseline.faceStability > 0.6) quality += 0.1;
+    else if (baseline.faceStability > 0.4) quality += 0.05;
+
+    // Environment cleanliness (10% of total score)
+    if (baseline.distractionScore < 0.2) quality += 0.1;
+    else if (baseline.distractionScore < 0.4) quality += 0.05;
+
+    return Math.min(quality, 1);
+  };
 
   const completeEnvironmentCheck = useCallback(() => {
     setIsCollecting(false);
@@ -435,7 +591,7 @@ export const EnvironmentCheck = ({
     const baseline = calculateEnvironmentBaseline(collectedData);
     const environmentQuality = calculateEnvironmentQuality(baseline);
 
-    const faceDetectionWorking = baseline.averageConfidence > 0.6;
+    const faceDetectionWorking = baseline && baseline.averageConfidence > 0.6;
 
     console.log('Environment check completed:', {
       baseline,
@@ -445,15 +601,15 @@ export const EnvironmentCheck = ({
     });
 
     onComplete({
-      lighting: baseline.averageLuminance,
-      stability: baseline.faceStability,
+      lighting: baseline?.averageLuminance || 120,
+      stability: baseline?.faceStability || 0,
       quality: environmentQuality,
       setupScore: faceDetectionWorking ? environmentQuality : 0.5,
       faceDetection: {
         working: faceDetectionWorking,
-        detectionRate: baseline.faceDetectionRate,
-        averageConfidence: baseline.averageConfidence,
-        stability: baseline.faceStability
+        detectionRate: baseline?.faceDetectionRate || 0,
+        averageConfidence: baseline?.averageConfidence || 0,
+        stability: baseline?.faceStability || 0
       },
       realTimeChecks: realTimeChecks
     });
@@ -579,16 +735,22 @@ export const EnvironmentCheck = ({
   // Show error screen
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">Environment Check Error</div>
-          <p className="text-gray-300 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-          >
-            Reload Page
-          </button>
+      <div className="relative w-full h-full">
+        {/* Always render video and canvas elements */}
+        <video ref={videoRef} className="hidden" autoPlay muted playsInline />
+        <canvas ref={canvasRef} className="hidden" />
+
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-red-400 text-xl mb-4">Environment Check Error</div>
+            <p className="text-gray-300 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -597,14 +759,20 @@ export const EnvironmentCheck = ({
   // Show initialization screen
   if (isInitializing) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="text-blue-400 text-xl mb-4">Initializing Face Detection</div>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-300 mb-2">{currentCheck}</p>
-          <p className="text-sm text-gray-400">
-            Please allow camera access when prompted
-          </p>
+      <div className="relative w-full h-full">
+        {/* Always render video and canvas elements */}
+        <video ref={videoRef} className="hidden" autoPlay muted playsInline />
+        <canvas ref={canvasRef} className="hidden" />
+
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-blue-400 text-xl mb-4">Initializing Face Detection</div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-gray-300 mb-2">{currentCheck}</p>
+            <p className="text-sm text-gray-400">
+              Please allow camera access when prompted
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -613,20 +781,26 @@ export const EnvironmentCheck = ({
   // Show ready screen with start button
   if (!isCollecting && !isInitializing) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="text-green-400 text-xl mb-4">✓ Camera Ready</div>
-          <p className="text-gray-300 mb-4">
-            Environment analysis will take 10 seconds.<br/>
-            Your camera is active and face detection is running.
-          </p>
-          <button
-            onClick={startEnvironmentCollection}
-            disabled={isProcessing}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg text-lg font-semibold transition-colors"
-          >
-            {isProcessing ? 'Processing...' : 'Start Environment Check'}
-          </button>
+      <div className="relative w-full h-full">
+        {/* Always render video and canvas elements */}
+        <video ref={videoRef} className="hidden" autoPlay muted playsInline />
+        <canvas ref={canvasRef} className="hidden" />
+
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-green-400 text-xl mb-4">✓ Camera Ready</div>
+            <p className="text-gray-300 mb-4">
+              Environment analysis will take 10 seconds.<br />
+              Your camera is active and face detection is running.
+            </p>
+            <button
+              onClick={startEnvironmentCollection}
+              disabled={isProcessing}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg text-lg font-semibold transition-colors"
+            >
+              {isProcessing ? 'Processing...' : 'Start Environment Check'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -643,17 +817,18 @@ export const EnvironmentCheck = ({
         muted
         playsInline
       />
-      
+
       {/* Real camera display with face detection overlay */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative">
           {/* Canvas showing real video with face detection overlay */}
           <canvas
             ref={canvasRef}
+            width={640}
+            height={480}
             className="rounded-lg border-2 border-gray-600 bg-black"
-            style={{ maxWidth: '640px', maxHeight: '480px' }}
           />
-          
+
           {/* Live face detection status overlay */}
           <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
             {liveFaceData.detected ? (
@@ -664,7 +839,7 @@ export const EnvironmentCheck = ({
               <span className="text-red-400">⚠ No Face Detected</span>
             )}
           </div>
-          
+
           {/* Stability indicator */}
           <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-3 py-1 rounded text-sm">
             Stability: {Math.round(liveFaceData.stability * 100)}%
@@ -681,7 +856,7 @@ export const EnvironmentCheck = ({
             <span className="text-white text-lg">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-3">
-            <div 
+            <div
               className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
@@ -691,7 +866,7 @@ export const EnvironmentCheck = ({
         {/* Current status */}
         <div className="text-center mb-4">
           <div className="text-gray-300 text-sm mb-3">{currentCheck}</div>
-          
+
           {/* Real-time status grid */}
           <div className="grid grid-cols-4 gap-2 max-w-md mx-auto">
             <div className={`flex flex-col items-center space-y-1 text-xs ${realTimeChecks.faceDetected ? 'text-green-400' : 'text-red-400'}`}>
