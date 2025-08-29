@@ -86,14 +86,17 @@ export const gazeTracker = {
         .setTracker('clmtrackr') // Best face tracker for precision
         .setGazeListener((data, elapsedTime) => {
           if (data && data.x !== undefined && data.y !== undefined) {
-            performanceMonitor.update();
+            // Safe performance monitor update
+            if (performanceMonitor && performanceMonitor.update) {
+              performanceMonitor.update();
+            }
             
             const gazePoint = {
               x: data.x,
               y: data.y,
               timestamp: Date.now(),
               elapsedTime,
-              confidence: this.calculateGazeConfidence(data),
+              confidence: gazeTracker.calculateGazeConfidence(data),
               screenBounds: {
                 width: window.innerWidth,
                 height: window.innerHeight
@@ -129,7 +132,7 @@ export const gazeTracker = {
           
           if (webgazer.isReady()) {
             // Setup video element properly
-            this.setupVideoElement();
+            gazeTracker.setupVideoElement();
             resolve();
           } else if (attempts >= maxAttempts) {
             reject(new Error('WebGazer failed to initialize within timeout'));
@@ -142,7 +145,7 @@ export const gazeTracker = {
       });
       
       // Warm up the system with some initial predictions
-      await this.warmupSystem();
+      await gazeTracker.warmupSystem();
       
       isInitialized = true;
       console.log('Professional gaze tracking system started successfully');
@@ -169,33 +172,45 @@ export const gazeTracker = {
       video.setAttribute('playsinline', 'true');
       video.setAttribute('muted', 'true');
       
-      container.appendChild(video);
+      // Only append if not already a child
+      if (!container.contains(video)) {
+        container.appendChild(video);
+      }
       
-      // Add video quality indicator
-      const qualityIndicator = document.createElement('div');
-      qualityIndicator.id = 'gazeQualityIndicator';
-      qualityIndicator.style.cssText = `
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-family: monospace;
-        z-index: 10;
-      `;
-      container.appendChild(qualityIndicator);
-      
-      // Update quality indicator
-      setInterval(() => {
-        if (performanceMonitor) {
-          const metrics = performanceMonitor.getMetrics();
-          qualityIndicator.textContent = `${metrics.fps}fps`;
-          qualityIndicator.style.color = metrics.fps >= 25 ? '#10b981' : metrics.fps >= 15 ? '#f59e0b' : '#ef4444';
-        }
-      }, 1000);
+      // Add video quality indicator if it doesn't exist
+      let qualityIndicator = document.getElementById('gazeQualityIndicator');
+      if (!qualityIndicator) {
+        qualityIndicator = document.createElement('div');
+        qualityIndicator.id = 'gazeQualityIndicator';
+        qualityIndicator.style.cssText = `
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background: rgba(0,0,0,0.7);
+          color: white;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-family: monospace;
+          z-index: 10;
+        `;
+        container.appendChild(qualityIndicator);
+        
+        // Update quality indicator with safe checks
+        const updateQualityIndicator = () => {
+          if (performanceMonitor && performanceMonitor.getMetrics && qualityIndicator) {
+            try {
+              const metrics = performanceMonitor.getMetrics();
+              qualityIndicator.textContent = `${metrics.fps}fps`;
+              qualityIndicator.style.color = metrics.fps >= 25 ? '#10b981' : metrics.fps >= 15 ? '#f59e0b' : '#ef4444';
+            } catch (error) {
+              console.warn('Error updating quality indicator:', error);
+            }
+          }
+        };
+        
+        setInterval(updateQualityIndicator, 1000);
+      }
     }
   },
 
@@ -205,7 +220,7 @@ export const gazeTracker = {
     
     for (let i = 0; i < 10; i++) {
       try {
-        await this.getCurrentGaze();
+        await gazeTracker.getCurrentGaze();
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         // Ignore warmup errors
@@ -356,7 +371,7 @@ export const gazeTracker = {
         webgazer.recordScreenPosition(x, y);
         
         // Also collect our own sample for quality analysis
-        this.getCurrentGaze().then(gazePoint => {
+        gazeTracker.getCurrentGaze().then(gazePoint => {
           sampleCount++;
           
           if (gazePoint && gazePoint.isValid) {
@@ -536,7 +551,7 @@ export const gazeTracker = {
           return;
         }
         
-        this.getCurrentGaze().then(gaze => {
+        gazeTracker.getCurrentGaze().then(gaze => {
           if (gaze) {
             samples.push(gaze);
           }
@@ -574,7 +589,7 @@ export const gazeTracker = {
     
     // Calculate screen coverage (how much of screen is being looked at)
     const gazePoints = samples.map(s => ({ x: s.x, y: s.y }));
-    const screenCoverage = this.calculateScreenCoverage(gazePoints);
+    const screenCoverage = gazeTracker.calculateScreenCoverage(gazePoints);
     
     // Calculate average confidence
     const avgConfidence = samples.reduce((sum, s) => sum + s.confidence, 0) / samples.length;
@@ -645,9 +660,9 @@ export const gazeTracker = {
 
   // Advanced calibration validation
   async recalibrateIfNeeded() {
-    if (!this.isReady()) return false;
+    if (!gazeTracker.isReady()) return false;
     
-    const accuracy = await this.testCalibrationAccuracy();
+    const accuracy = await gazeTracker.testCalibrationAccuracy();
     
     if (accuracy < 0.6) {
       console.log('Calibration accuracy degraded, recalibration recommended');
@@ -692,13 +707,13 @@ export const gazeTracker = {
         if (position && position.length > 0) {
           // Extract face landmarks and calculate face metrics
           const landmarks = position;
-          const faceBox = this.calculateFaceBoundingBox(landmarks);
+          const faceBox = gazeTracker.calculateFaceBoundingBox(landmarks);
           
           return {
             detected: true,
             landmarks: landmarks,
             boundingBox: faceBox,
-            confidence: this.calculateFaceConfidence(landmarks),
+            confidence: gazeTracker.calculateFaceConfidence(landmarks),
             timestamp: Date.now()
           };
         }
@@ -776,7 +791,7 @@ export const gazeTracker = {
       const samples = [];
       
       const checkInterval = setInterval(() => {
-        const faceData = this.getFaceData();
+        const faceData = gazeTracker.getFaceData();
         const elapsed = Date.now() - startTime;
         
         if (faceData) {
@@ -798,7 +813,7 @@ export const gazeTracker = {
               : 0,
             totalSamples: samples.length,
             validSamples: validSamples.length,
-            faceStability: this.calculateFaceStability(validSamples)
+            faceStability: gazeTracker.calculateFaceStability(validSamples)
           };
           
           resolve(result);
