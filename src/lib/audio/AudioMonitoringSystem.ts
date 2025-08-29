@@ -41,16 +41,18 @@ export class AudioMonitoringSystem {
     try {
       await this.audioProcessor.initialize();
     } catch (error) {
-      throw new AudioError(`Failed to initialize audio monitoring system: ${error.message}`, {
-        code: 'MICROPHONE_ACCESS_DENIED',
-        details: { originalError: error }
-      });
+      const audioError = new Error(`Failed to initialize audio monitoring system: ${error.message}`) as AudioError;
+      audioError.code = 'MICROPHONE_ACCESS_DENIED';
+      audioError.details = { originalError: error };
+      throw audioError;
     }
   }
 
   async calibrate(durationMs: number = 10000): Promise<AudioCalibrationProfile> {
     if (!this.processorConfig.enabled) {
-      throw new AudioError('Audio monitoring is disabled', { code: 'PROCESSING_ERROR' });
+      const error = new Error('Audio monitoring is disabled') as AudioError;
+      error.code = 'PROCESSING_ERROR';
+      throw error;
     }
 
     const calibrationSamples: any[] = [];
@@ -60,7 +62,9 @@ export class AudioMonitoringSystem {
 
     return new Promise((resolve, reject) => {
       const calibrationTimeout = setTimeout(() => {
-        reject(new AudioError('Calibration timeout', { code: 'CALIBRATION_FAILED' }));
+        const error = new Error('Calibration timeout') as AudioError;
+        error.code = 'CALIBRATION_FAILED';
+        reject(error);
       }, durationMs + 5000);
 
       const calibrationCallback = (signals: AudioSignals) => {
@@ -100,10 +104,10 @@ export class AudioMonitoringSystem {
             
             resolve(this.calibrationProfile);
           } catch (error) {
-            reject(new AudioError(`Calibration failed: ${error.message}`, {
-              code: 'CALIBRATION_FAILED',
-              details: { originalError: error }
-            }));
+            const audioError = new Error(`Calibration failed: ${error.message}`) as AudioError;
+            audioError.code = 'CALIBRATION_FAILED';
+            audioError.details = { originalError: error };
+            reject(audioError);
           }
         }
       };

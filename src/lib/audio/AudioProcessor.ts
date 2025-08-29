@@ -59,18 +59,18 @@ export class AudioProcessor {
       };
 
     } catch (error) {
-      throw new AudioError(`Failed to initialize audio processor: ${error.message}`, {
-        code: 'AUDIO_CONTEXT_ERROR',
-        details: { originalError: error }
-      });
+      const audioError = new Error(`Failed to initialize audio processor: ${error.message}`) as AudioError;
+      audioError.code = 'AUDIO_CONTEXT_ERROR';
+      audioError.details = { originalError: error };
+      throw audioError;
     }
   }
 
   startProcessing(callback: (signals: AudioSignals) => void): void {
     if (!this.audioContext || !this.analyser) {
-      throw new AudioError('Audio processor not initialized', {
-        code: 'PROCESSING_ERROR'
-      });
+      const error = new Error('Audio processor not initialized') as AudioError;
+      error.code = 'PROCESSING_ERROR';
+      throw error;
     }
 
     this.onSignalsCallback = callback;

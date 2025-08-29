@@ -3,9 +3,17 @@
  */
 
 import { AudioAnalysisResult, AudioBuffer, FrequencyAnalysis, AudioConfig } from './types';
+import { HumanVoiceClassifier } from './HumanVoiceClassifier';
+import { PhoneCallDetector } from './PhoneCallDetector';
+import { KeyboardSoundDetector } from './KeyboardSoundDetector';
+import { RoomAcousticsAnalyzer } from './RoomAcousticsAnalyzer';
 
 export class AudioAnalyzer {
   private config: AudioConfig;
+  private humanVoiceClassifier: HumanVoiceClassifier;
+  private phoneCallDetector: PhoneCallDetector;
+  private keyboardSoundDetector: KeyboardSoundDetector;
+  private roomAcousticsAnalyzer: RoomAcousticsAnalyzer;
   private phoneCallPatterns: Map<string, number> = new Map();
   private keyboardSignatures: Float32Array[] = [];
   private deviceSignatures: Map<string, Float32Array> = new Map();
@@ -13,6 +21,10 @@ export class AudioAnalyzer {
 
   constructor(config: AudioConfig) {
     this.config = config;
+    this.humanVoiceClassifier = new HumanVoiceClassifier(config);
+    this.phoneCallDetector = new PhoneCallDetector(config);
+    this.keyboardSoundDetector = new KeyboardSoundDetector(config);
+    this.roomAcousticsAnalyzer = new RoomAcousticsAnalyzer(config);
     this.initializeSignatureDatabase();
   }
 
@@ -24,21 +36,48 @@ export class AudioAnalyzer {
   }
 
   analyzeAudio(buffer: AudioBuffer, frequencyAnalysis: FrequencyAnalysis): AudioAnalysisResult {
-    // Perform comprehensive audio analysis
+    // Perform comprehensive audio analysis using specialized analyzers
     const voiceActivity = this.analyzeVoiceActivity(buffer, frequencyAnalysis);
     const conversationDetected = this.detectConversation(buffer, frequencyAnalysis);
     const whisperDetected = this.detectWhisper(buffer, frequencyAnalysis);
-    const humanVoiceClassification = this.classifyHumanVoice(buffer, frequencyAnalysis);
-    const environmentAnalysis = this.analyzeEnvironment(buffer, frequencyAnalysis);
+    
+    // Use specialized classifiers for detailed analysis
+    const humanVoiceClassification = this.humanVoiceClassifier.classifyVoice(buffer, frequencyAnalysis);
+    const phoneCallAnalysis = this.phoneCallDetector.detectPhoneCall(buffer, frequencyAnalysis);
+    const keyboardAnalysis = this.keyboardSoundDetector.detectKeyboardSound(buffer, frequencyAnalysis);
+    const roomAcoustics = this.roomAcousticsAnalyzer.analyzeRoomAcoustics(buffer, frequencyAnalysis);
+    
+    // Legacy device detection for compatibility
     const deviceDetection = this.detectDevices(buffer, frequencyAnalysis);
+    
+    // Enhanced environment analysis
+    const environmentAnalysis = {
+      acousticFingerprint: roomAcoustics.spatialCharacteristics.acousticCenter ? 
+        new Float32Array([roomAcoustics.spatialCharacteristics.acousticCenter]) : new Float32Array(32),
+      reverbTime: roomAcoustics.reverberation.rt60,
+      backgroundNoiseLevel: roomAcoustics.backgroundNoise.level,
+      roomSize: roomAcoustics.roomCharacteristics.size
+    };
 
     return {
       voiceActivity,
       conversationDetected,
       whisperDetected,
-      humanVoiceClassification,
+      humanVoiceClassification: {
+        isHuman: humanVoiceClassification.isHuman,
+        confidence: humanVoiceClassification.confidence,
+        voiceCharacteristics: {
+          pitch: 150, // Placeholder - would extract from voice analysis
+          formants: [800, 1200, 2500], // Placeholder
+          harmonicity: humanVoiceClassification.voiceQuality.naturalness
+        }
+      },
       environmentAnalysis,
-      deviceDetection
+      deviceDetection: {
+        phoneCall: phoneCallAnalysis.isPhoneCall,
+        keyboardTyping: keyboardAnalysis.isKeyboardSound,
+        electronicDevices: roomAcoustics.backgroundNoise.sources
+      }
     };
   }
 

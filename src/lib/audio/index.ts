@@ -7,6 +7,10 @@ export { VoiceActivityDetector } from './VoiceActivityDetector';
 export { AudioAnalyzer } from './AudioAnalyzer';
 export { AudioFingerprinter } from './AudioFingerprinter';
 export { AudioMonitoringSystem, createAudioMonitoringSystem } from './AudioMonitoringSystem';
+export { HumanVoiceClassifier } from './HumanVoiceClassifier';
+export { PhoneCallDetector } from './PhoneCallDetector';
+export { KeyboardSoundDetector } from './KeyboardSoundDetector';
+export { RoomAcousticsAnalyzer } from './RoomAcousticsAnalyzer';
 
 export type {
   AudioSignals,
