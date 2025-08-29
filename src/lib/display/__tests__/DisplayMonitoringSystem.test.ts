@@ -171,7 +171,11 @@ describe('DisplayMonitoringSystem', () => {
             expect(mockScreenBehaviorMonitor.startMonitoring).toHaveBeenCalled();
         });
 
-        it('should stop monitoring correctly', () => {
+        it('should stop monitoring correctly', async () => {
+            // Start monitoring first
+            await system.startMonitoring();
+
+            // Then stop it
             system.stopMonitoring();
 
             expect(mockDisplayDetector.stopMonitoring).toHaveBeenCalled();
@@ -179,8 +183,30 @@ describe('DisplayMonitoringSystem', () => {
         });
 
         it('should not start monitoring twice', async () => {
-            mockDisplayDetector.performDetection.mockResolvedValue({} as any);
-            mockScreenBehaviorMonitor.getMonitoringStatus.mockReturnValue({} as any);
+            mockDisplayDetector.performDetection.mockResolvedValue({
+                displays: [],
+                multipleDisplaysDetected: false,
+                externalDisplaysDetected: false,
+                tvProjectorDetected: false,
+                virtualDisplayDetected: false,
+                reflectionBasedScreens: [],
+                eyeMovementCorrelation: {
+                    correlationScore: 0,
+                    suspiciousPatterns: [],
+                    offScreenGazeDetected: false,
+                    externalScreenInteraction: false,
+                    confidence: 0
+                },
+                confidence: 0,
+                timestamp: Date.now()
+            });
+            mockScreenBehaviorMonitor.getMonitoringStatus.mockReturnValue({
+                cursorTracking: { position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, acceleration: { x: 0, y: 0 }, outsideViewport: false, suspiciousMovement: false, automatedBehavior: false, confidence: 0 },
+                windowFocus: { currentWindow: '', focusChanges: [], applicationSwitching: false, suspiciousApplications: [], backgroundActivity: false },
+                screenSharing: { isScreenSharing: false, remoteDesktopDetected: false, screenCastingDetected: false, collaborationToolsDetected: [], confidence: 0 },
+                fullscreenEnforcement: { isFullscreen: false, enforcementActive: false, bypassAttempts: 0, violations: [] },
+                virtualMachineDisplay: { isVirtualDisplay: false, vmSoftware: [], displayDrivers: [], resolutionAnomalies: false, refreshRateAnomalies: false, confidence: 0 }
+            });
 
             await system.startMonitoring();
             await system.startMonitoring();
@@ -211,6 +237,7 @@ describe('DisplayMonitoringSystem', () => {
                 virtualMachineDisplay: { isVirtualDisplay: false, vmSoftware: [], displayDrivers: [], resolutionAnomalies: false, refreshRateAnomalies: false, confidence: 0.9 }
             });
 
+            await system.startMonitoring();
             const result = await system.getCurrentStatus();
             expect(result.overallThreatLevel).toBe('low');
         });
@@ -239,6 +266,7 @@ describe('DisplayMonitoringSystem', () => {
                 virtualMachineDisplay: { isVirtualDisplay: false, vmSoftware: [], displayDrivers: [], resolutionAnomalies: false, refreshRateAnomalies: false, confidence: 0.9 }
             });
 
+            await system.startMonitoring();
             const result = await system.getCurrentStatus();
             expect(result.overallThreatLevel).toBe('high');
         });
@@ -264,6 +292,7 @@ describe('DisplayMonitoringSystem', () => {
                 virtualMachineDisplay: { isVirtualDisplay: true, vmSoftware: ['virtualbox'], displayDrivers: ['vmware'], resolutionAnomalies: true, refreshRateAnomalies: false, confidence: 0.2 }
             });
 
+            await system.startMonitoring();
             const result = await system.getCurrentStatus();
             expect(result.overallThreatLevel).toBe('critical');
         });
@@ -294,6 +323,7 @@ describe('DisplayMonitoringSystem', () => {
                 virtualMachineDisplay: { isVirtualDisplay: false, vmSoftware: [], displayDrivers: [], resolutionAnomalies: false, refreshRateAnomalies: false, confidence: 0.9 }
             });
 
+            await system.startMonitoring();
             const result = await system.getCurrentStatus();
 
             expect(result.recommendations).toContain('Disconnect additional monitors and use only the primary display');
@@ -321,6 +351,7 @@ describe('DisplayMonitoringSystem', () => {
                 virtualMachineDisplay: { isVirtualDisplay: false, vmSoftware: [], displayDrivers: [], resolutionAnomalies: false, refreshRateAnomalies: false, confidence: 0.9 }
             });
 
+            await system.startMonitoring();
             const result = await system.getCurrentStatus();
 
             expect(result.recommendations).toContain('Close all other applications and focus only on the quiz');
