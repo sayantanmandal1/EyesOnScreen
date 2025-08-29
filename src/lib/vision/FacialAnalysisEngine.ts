@@ -148,6 +148,14 @@ export class FacialAnalysisEngine {
     const mouthMovement = this.calculateMouthMovement(landmarks);
     const cheekMovement = this.calculateCheekMovement(landmarks);
 
+    // Debug: Check if we have any movement at all
+    const hasMovement = eyebrowMovement > 0 || eyeMovement > 0 || mouthMovement > 0 || cheekMovement > 0;
+    
+    // If no previous landmarks, use static analysis
+    if (!this.previousLandmarks) {
+      return this.detectStaticExpression(landmarks);
+    }
+
     // Classify expression based on facial action units
     const expressionScores = {
       surprise: this.calculateSurpriseScore(eyebrowMovement, eyeMovement, mouthMovement),
@@ -157,7 +165,7 @@ export class FacialAnalysisEngine {
       happiness: this.calculateHappinessScore(eyeMovement, mouthMovement, cheekMovement),
       sadness: this.calculateSadnessScore(eyebrowMovement, eyeMovement, mouthMovement),
       contempt: this.calculateContemptScore(mouthMovement),
-      neutral: 0.5 // Baseline neutral score
+      neutral: 0.3 // Lower baseline neutral score
     };
 
     // Find dominant expression
@@ -167,7 +175,8 @@ export class FacialAnalysisEngine {
 
     const confidence = dominantExpression[1] as number;
     
-    if (confidence < 0.6) return null; // Too low confidence
+    // Lower confidence threshold for better detection
+    if (confidence < 0.4) return null;
 
     return {
       type: dominantExpression[0] as MicroExpression['type'],
@@ -176,6 +185,37 @@ export class FacialAnalysisEngine {
       duration: this.calculateExpressionDuration(dominantExpression[0] as MicroExpression['type']),
       timestamp: Date.now()
     };
+  }
+
+  private detectStaticExpression(landmarks: FaceLandmarks[]): MicroExpression | null {
+    // Detect expressions from static facial features
+    const mouthCurvature = this.calculateMouthCurvature(landmarks);
+    const eyeOpenness = this.calculateEyeOpenness(landmarks);
+    const eyebrowHeight = this.calculateEyebrowHeight(landmarks);
+    
+    // Check for surprise first (eyebrows raised + wide eyes) - more sensitive
+    if (eyebrowHeight > 0.025 && eyeOpenness > 0.03) {
+      return {
+        type: 'surprise',
+        confidence: Math.min((eyebrowHeight + eyeOpenness) * 10, 0.9),
+        intensity: Math.min((eyebrowHeight + eyeOpenness) * 12, 1.0),
+        duration: 0,
+        timestamp: Date.now()
+      };
+    }
+    
+    // Check for happiness (mouth curvature) - but not if eyebrows are raised
+    if (mouthCurvature > 0.025 && eyebrowHeight < 0.02) {
+      return {
+        type: 'happiness',
+        confidence: Math.min(mouthCurvature * 25, 0.9),
+        intensity: Math.min(mouthCurvature * 35, 1.0),
+        duration: 0,
+        timestamp: Date.now()
+      };
+    }
+    
+    return null;
   }
 
   private analyzeLipMovement(landmarks: FaceLandmarks[]): LipMovementAnalysis {
@@ -227,8 +267,8 @@ export class FacialAnalysisEngine {
     // Speech likelihood based on lip movements and shape
     const speechLikelihood = this.calculateSpeechLikelihood(movementIntensity, lipAspectRatio);
     
-    // Whisper detection (subtle lip movements)
-    const whisperDetected = movementIntensity > 0.05 && movementIntensity < 0.2 && speechLikelihood > 0.3;
+    // Whisper detection (subtle lip movements) - more sensitive detection
+    const whisperDetected = movementIntensity > 0.008 && movementIntensity < 0.15 && speechLikelihood > 0.1;
 
     // Lip sync score (consistency of lip movements)
     const lipSyncScore = this.calculateLipSyncScore();
@@ -273,25 +313,27 @@ export class FacialAnalysisEngine {
       };
     }
 
-    // Calculate yaw (left-right rotation)
+    // Calculate yaw (left-right rotation) - improved calculation
     const eyeCenter = {
       x: (leftEye.x + rightEye.x) / 2,
       y: (leftEye.y + rightEye.y) / 2
     };
     const noseToEyeCenter = noseTip.x - eyeCenter.x;
-    const yaw = Math.atan2(noseToEyeCenter, 0.1) * (180 / Math.PI);
+    // More conservative yaw calculation
+    const yaw = Math.atan2(noseToEyeCenter, 0.05) * (180 / Math.PI) * 0.5;
 
-    // Calculate pitch (up-down rotation)
+    // Calculate pitch (up-down rotation) - improved calculation
     const mouthCenter = {
       x: (leftMouth.x + rightMouth.x) / 2,
       y: (leftMouth.y + rightMouth.y) / 2
     };
     const eyeToMouthDistance = mouthCenter.y - eyeCenter.y;
-    const pitch = Math.atan2(eyeToMouthDistance - 0.15, 0.1) * (180 / Math.PI);
+    // More conservative pitch calculation
+    const pitch = Math.atan2(eyeToMouthDistance - 0.2, 0.05) * (180 / Math.PI) * 0.3;
 
-    // Calculate roll (tilt rotation)
+    // Calculate roll (tilt rotation) - improved calculation
     const eyeAngle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
-    const roll = eyeAngle * (180 / Math.PI);
+    const roll = eyeAngle * (180 / Math.PI) * 0.5;
 
     // Calculate confidence based on landmark quality
     const confidence = this.calculateOrientationConfidence(landmarks);
@@ -501,31 +543,35 @@ export class FacialAnalysisEngine {
 
   // Expression scoring methods
   private calculateSurpriseScore(eyebrow: number, eye: number, mouth: number): number {
-    return (eyebrow * 0.5 + eye * 0.3 + mouth * 0.2) * 0.8;
+    // Enhanced surprise detection - high eyebrow movement + wide eyes + open mouth
+    const surpriseScore = (eyebrow * 0.5 + eye * 0.3 + mouth * 0.2);
+    return Math.min(surpriseScore * 1.2, 1.0); // Boost surprise detection
   }
 
   private calculateFearScore(eyebrow: number, eye: number, mouth: number): number {
-    return (eyebrow * 0.4 + eye * 0.4 + mouth * 0.2) * 0.7;
+    return (eyebrow * 0.4 + eye * 0.4 + mouth * 0.2) * 0.8;
   }
 
   private calculateDisgustScore(mouth: number, cheek: number): number {
-    return (mouth * 0.6 + cheek * 0.4) * 0.6;
+    return (mouth * 0.6 + cheek * 0.4) * 0.7;
   }
 
   private calculateAngerScore(eyebrow: number, eye: number, mouth: number): number {
-    return (eyebrow * 0.4 + eye * 0.3 + mouth * 0.3) * 0.7;
+    return (eyebrow * 0.4 + eye * 0.3 + mouth * 0.3) * 0.8;
   }
 
   private calculateHappinessScore(eye: number, mouth: number, cheek: number): number {
-    return (eye * 0.3 + mouth * 0.5 + cheek * 0.2) * 0.9;
+    // Enhanced happiness detection - squinted eyes + upturned mouth + raised cheeks
+    const happinessScore = (eye * 0.3 + mouth * 0.5 + cheek * 0.2);
+    return Math.min(happinessScore * 1.3, 1.0); // Boost happiness detection
   }
 
   private calculateSadnessScore(eyebrow: number, eye: number, mouth: number): number {
-    return (eyebrow * 0.3 + eye * 0.4 + mouth * 0.3) * 0.6;
+    return (eyebrow * 0.3 + eye * 0.4 + mouth * 0.3) * 0.7;
   }
 
   private calculateContemptScore(mouth: number): number {
-    return mouth * 0.5;
+    return mouth * 0.6;
   }
 
   private calculateExpressionDuration(expressionType: string): number {
@@ -589,12 +635,19 @@ export class FacialAnalysisEngine {
   }
 
   private calculateAttentionScore(yaw: number, pitch: number, roll: number): number {
-    // Calculate attention based on head orientation
-    const yawScore = Math.max(0, 1 - Math.abs(yaw) / 30);
-    const pitchScore = Math.max(0, 1 - Math.abs(pitch) / 20);
-    const rollScore = Math.max(0, 1 - Math.abs(roll) / 15);
+    // Calculate attention based on head orientation - more lenient thresholds
+    const yawScore = Math.max(0, 1 - Math.abs(yaw) / 45); // Increased threshold
+    const pitchScore = Math.max(0, 1 - Math.abs(pitch) / 30); // Increased threshold
+    const rollScore = Math.max(0, 1 - Math.abs(roll) / 25); // Increased threshold
     
-    return (yawScore * 0.5 + pitchScore * 0.3 + rollScore * 0.2);
+    const baseScore = (yawScore * 0.5 + pitchScore * 0.3 + rollScore * 0.2);
+    
+    // For neutral face (small angles), give high attention score
+    if (Math.abs(yaw) < 8 && Math.abs(pitch) < 8 && Math.abs(roll) < 8) {
+      return Math.max(baseScore, 0.85);
+    }
+    
+    return baseScore;
   }
 
   private estimatePupilSize(eyeLandmarks: FaceLandmarks[]): number {
@@ -672,13 +725,14 @@ export class FacialAnalysisEngine {
   }
 
   private calculateMicroExpressionInconsistency(): number {
-    if (this.expressionHistory.length < 5) return 0;
+    if (this.expressionHistory.length < 3) return 0; // Reduced threshold
     
     const recentExpressions = this.expressionHistory.slice(-5);
     const uniqueExpressions = new Set(recentExpressions.map(exp => exp.type));
     
     // High inconsistency if many different expressions in short time
-    return Math.min(uniqueExpressions.size / 3, 1.0);
+    // More sensitive calculation
+    return Math.min(uniqueExpressions.size / 2, 1.0);
   }
 
   private calculateSuspiciousEyeMovements(landmarks: FaceLandmarks[], orientation: FacialOrientation): number {
@@ -763,6 +817,61 @@ export class FacialAnalysisEngine {
     if (!forehead || !chin) return 0;
     
     return Math.abs(chin.y - forehead.y);
+  }
+
+  private calculateMouthCurvature(landmarks: FaceLandmarks[]): number {
+    const leftCorner = landmarks[61];
+    const rightCorner = landmarks[291];
+    const topLip = landmarks[13];
+    const bottomLip = landmarks[14];
+    
+    if (!leftCorner || !rightCorner || !topLip || !bottomLip) return 0;
+    
+    const mouthCenter = {
+      x: (leftCorner.x + rightCorner.x) / 2,
+      y: (topLip.y + bottomLip.y) / 2
+    };
+    
+    // Calculate upward curvature (smile) - more conservative
+    const leftCurve = mouthCenter.y - leftCorner.y;
+    const rightCurve = mouthCenter.y - rightCorner.y;
+    
+    // Only return positive if both corners are significantly raised
+    const avgCurve = (leftCurve + rightCurve) / 2;
+    return avgCurve > 0.01 ? avgCurve : 0; // More conservative threshold
+  }
+
+  private calculateEyeOpenness(landmarks: FaceLandmarks[]): number {
+    const leftEyeHeight = this.calculateEyeHeight(this.landmarkIndices.leftEye.map(i => landmarks[i]).filter(Boolean));
+    const rightEyeHeight = this.calculateEyeHeight(this.landmarkIndices.rightEye.map(i => landmarks[i]).filter(Boolean));
+    
+    return (leftEyeHeight + rightEyeHeight) / 2;
+  }
+
+  private calculateEyebrowHeight(landmarks: FaceLandmarks[]): number {
+    const leftEyebrow = this.landmarkIndices.leftEyebrow.map(i => landmarks[i]).filter(Boolean);
+    const rightEyebrow = this.landmarkIndices.rightEyebrow.map(i => landmarks[i]).filter(Boolean);
+    const leftEye = landmarks[33];
+    const rightEye = landmarks[362];
+    
+    if (leftEyebrow.length === 0 || rightEyebrow.length === 0 || !leftEye || !rightEye) return 0;
+    
+    const leftEyebrowCenter = leftEyebrow.reduce((sum, p) => sum + p.y, 0) / leftEyebrow.length;
+    const rightEyebrowCenter = rightEyebrow.reduce((sum, p) => sum + p.y, 0) / rightEyebrow.length;
+    
+    const eyebrowHeight = (leftEyebrowCenter + rightEyebrowCenter) / 2;
+    const eyeHeight = (leftEye.y + rightEye.y) / 2;
+    
+    // Return the distance between eyebrows and eyes (higher = more raised)
+    // Enhanced calculation for better surprise detection
+    const distance = Math.abs(eyeHeight - eyebrowHeight);
+    
+    // If eyebrows are significantly above normal position, amplify the signal
+    if (eyebrowHeight < 0.4) { // Eyebrows raised high
+      return distance * 2; // Amplify for surprise detection
+    }
+    
+    return distance;
   }
 
   // Public API methods

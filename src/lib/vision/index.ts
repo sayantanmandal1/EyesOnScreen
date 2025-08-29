@@ -33,4 +33,47 @@ export type {
   SecondaryObjectDetectorConfig
 } from './SecondaryObjectDetector';
 
+export { AdvancedFaceDetector } from './AdvancedFaceDetector';
+export type {
+  FaceLandmarks,
+  FaceDetectionResult as AdvancedFaceDetectionResult,
+  IdentityProfile
+} from './AdvancedFaceDetector';
+
+export { FacialAnalysisEngine, facialAnalysisEngine } from './FacialAnalysisEngine';
+export type {
+  MicroExpression,
+  LipMovementAnalysis,
+  FacialOrientation,
+  PupilAnalysis,
+  FacialModel3D,
+  FacialAnalysisResult
+} from './FacialAnalysisEngine';
+
+export { MilitaryGradeGazeTracker } from './MilitaryGradeGazeTracker';
+export type {
+  SubPixelIrisData,
+  CornealReflection,
+  IrisQuality,
+  PrecisionGazeVector,
+  ScreenIntersection,
+  GazeDeviationAnalysis
+} from './MilitaryGradeGazeTracker';
+
+export { EyeBehaviorAnalyzer } from './EyeBehaviorAnalyzer';
+export type {
+  BlinkData,
+  BlinkPattern,
+  EyeMovementPattern,
+  AttentionFocus,
+  OffScreenGazeAlert,
+  TemporalGazeConsistency
+} from './EyeBehaviorAnalyzer';
+
+export { MilitaryGradeGazeSystem } from './MilitaryGradeGazeSystem';
+export type {
+  MilitaryGradeGazeData,
+  MilitaryGradeConfig
+} from './MilitaryGradeGazeSystem';
+
 export * from './types';
